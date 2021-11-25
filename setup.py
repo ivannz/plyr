@@ -16,7 +16,7 @@ setup(
                 'src/operations.cpp',
                 'src/apply.cpp',
             ], include_dirs=[
-                'include'
+                'src/include'
             ], extra_compile_args=[
                 '-O3', '-Ofast'
             ], language='c++',
