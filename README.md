@@ -1,18 +1,68 @@
-# Plyr: nested `map`
+# Plyr: computing on nested containers 
 
-This python c-extension implementats a `map`-like functionality for arbitrarily nested *built-in* python containers, i.e. dicts, lists, tuples etc. No need to manually pack/repack nested structures in order to call the same function on its underlying non-container objects. See the dosctring of `plyr.apply` for more details.
+`plyr` \[/plaɪ'ə/\], derived from `applier`, is a python C-extension, that implements a `map`-like logic, which computes a specified function on the lower-most non-container data of arbitrarily nested *built-in* python containers, i.e. dicts, lists, tuples. It automatically unpacks nested containers in order to call the same function on their underlying non-container objects and then reassembles the structures. See the docstring of `plyr.apply` for details.
+
+`plyr` \[/plaɪ'ə/\] is derived from `applier`, but also happens to coincide with a similarly named library for [`R` statistical computations language](https://www.r-project.org/), which streamlines dataframe and vector/matrix transformations.
+
+
+## Example
+
+Below we provide hopefully an illustrative example of the cases `plyr` might be useful in.
 
 ```python
-from plyr import apply
+import plyr
 
-# sum the leaf data in two nested objects
-apply(
+# add the leaf data in a pair of nested objects
+plyr.apply(
     lambda u, v: u + v,
     [{'a': [1, 2, 3]}, {'b': 1, 'z': 'abc'}, ],
     [{'a': [4, 6, 8]}, {'b': 4, 'z': 'xyz'}, ],
+    # _star=True,  # (default) call fn(d1, d2, **kwargs)
 )
-# outputs [{'a': [5, 8, 11]}, {'b': 5, 'z': 'abcxyz'}]
+# output: [{'a': [5, 8, 11]}, {'b': 5, 'z': 'abcxyz'}]
+
+# join strings in a pair of tuples
+plyr.apply(
+    ' -->> '.join,
+    ('a-b-c', 'u-v-w', 'x-y-z',),
+    ('123', '456', '789',),
+    _star=False,  # call fn((d1, d2,), **kwargs)
+)
+# output: ('abc -->> 123', 'uvw -->> 456', 'xyz -->> 789')
 ```
 
-`plyr` \[/plaɪ'ə/\] is derived from `applier`, but also happens to coincide with a similarly named library for [`R` statistical computations language](https://www.r-project.org/), which streamlines dataframe and vector/matrix transformations.
-RE
+By default `.apply` performs safety checks to ensure indentical structure if multiple nested objects are given. If the arguments have identical structure by design, then these integrity checks may be turned off by specifying `_safe=False`. Please refer to the docs of `plyr.apply`.
+
+
+## Other examples
+
+Below we perform something fancy with `numpy`. Specifically we stack experimental results (dicts of arrays), then get the standard deviation between the results
+
+```python
+import plyr
+import numpy as np
+
+
+# some computations
+def experiment(j):
+    return dict(
+        a=float(np.random.normal()),
+        u=np.random.normal(size=(5, 2)) * 0.1,
+        z=np.random.normal(size=(2, 5)) * 10,
+    )
+
+
+# run 10 replications of an experiment
+results = [experiment(j) for j in range(10)]
+
+# stack and analyze the results (np.stack needs an iterable argument)
+res = plyr.apply(np.stack, *results, axis=0, _star=False)
+
+# get the shapes
+shapes = plyr.apply(lambda x: x.shape, res)
+
+# compute the std along the replication axis
+plyr.apply(np.std, res, axis=0)
+```
+
+You may notice that `.apply` is very _straightforward_: it applies the specified function regardless of the leaf data type.
