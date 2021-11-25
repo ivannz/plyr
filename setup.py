@@ -3,11 +3,13 @@ from setuptools import setup, Extension
 setup(
     name='python-plyr',
     version='0.5',
-    author='Ivan Nazarov',
-    license='MIT',
     description="""Mapping tools for nested containers.""",
     long_description=open('README.md').read(),
-    long_description_content_type="text/markdown",
+    long_description_content_type='text/markdown',
+    url="https://github.com/ivannz/plyr",
+    license='MIT License',
+    author='Ivan Nazarov',
+    author_email='ivannnnz@gmail.com',
     packages=[],
     install_requires=[],
     ext_modules=[
