@@ -1,7 +1,7 @@
 from setuptools import setup, Extension
 
 setup(
-    name='plyr',
+    name='python-plyr',
     version='0.5',
     author='Ivan Nazarov',
     license='MIT',
