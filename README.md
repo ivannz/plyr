@@ -1,6 +1,6 @@
 # Plyr: nested `map`
 
-No more will you need to manually pack/unpack nested structures (dicts, lists, tuples etc.) in order to call the same function on its underlying objects. In order to support such basic arbitrarily nested objects, I wrote a c-api implementation of a `map`-like functionality for nested containers with arbitrary inner data. See the dosctring of `plyr.apply` for more details.
+This python c-extension implementats a `map`-like functionality for arbitrarily nested *built-in* python containers, i.e. dicts, lists, tuples etc. No need to manually pack/repack nested structures in order to call the same function on its underlying non-container objects. See the dosctring of `plyr.apply` for more details.
 
 ```python
 from plyr import apply
@@ -15,3 +15,4 @@ apply(
 ```
 
 `plyr` \[/plaɪ'ə/\] is derived from `applier`, but also happens to coincide with a similarly named library for [`R` statistical computations language](https://www.r-project.org/), which streamlines dataframe and vector/matrix transformations.
+RE
