@@ -2,10 +2,12 @@ from setuptools import setup, Extension
 
 setup(
     name='plyr',
-    description="""Mapping tools for nested containers.""",
     version='0.5',
     author='Ivan Nazarov',
     license='MIT',
+    description="""Mapping tools for nested containers.""",
+    long_description=open('README.md').read(),
+    long_description_content_type="text/markdown",
     packages=[],
     install_requires=[],
     ext_modules=[
