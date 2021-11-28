@@ -20,6 +20,7 @@ setup(
                 'src/operations.cpp',
                 'src/apply.cpp',
                 'src/tools.cpp',
+                'src/ragged.cpp',
             ], include_dirs=[
                 'src/include'
             ], extra_compile_args=[

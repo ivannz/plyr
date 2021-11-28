@@ -4,6 +4,8 @@
 #include <validate.h>
 #include <operations.h>
 
+#include <ragged.h>
+
 
 PyDoc_STRVAR(
     __doc__,
@@ -110,6 +112,8 @@ static PyMethodDef modplyr_methods[] = {
     def_is_mapping,
     def_dict_getrefs,
     def_dict_clone,
+
+    def_ragged,
     {
         NULL,
         NULL,
