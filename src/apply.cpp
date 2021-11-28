@@ -171,7 +171,8 @@ static PyObject* _apply_dict(
         Py_DECREF(result);
     }
 
-    // decrefing a tuple also decrefs all its items
+    // decrefing a tuple with only one reference, as is the case here, also
+    //  decrefs all its items.
     Py_DECREF(rest_);
 
     return output;
@@ -465,7 +466,9 @@ int parse_apply_args(
     PyObject **rest)
 {
     // docs imply that `PyTuple_GetSlice` does not steal references to the elements
-    //  in the slice, meaning that the objects in it are increfed
+    //  in the slice, meaning that the objects in it are increfed. However, when
+    //  slicing yields the full original tuple, in this case the returned object
+    //  is exactly the original tuple, but with its own refcount incremented.
     PyObject *first = PyTuple_GetSlice(args, 0, 2);
     if (first == NULL)
         return 0;
@@ -481,6 +484,7 @@ int parse_apply_args(
         return 0;
     }
 
+    // always increfs the items in the slice, since it always creates a new tuple
     Py_ssize_t len = PyTuple_GET_SIZE(args);
     *rest = PyTuple_GetSlice(args, 2, len);
 

@@ -65,7 +65,8 @@ PyObject *PyDict_SplitItemStrings(
 
 PyObject* PyTuple_Clone(PyObject *tuple)
 {
-    // apparently PyTuple_GetSlice does not incref the items in the tuple
+    // we cannot use `PyTuple_GetSlice` to clone a tuple, since in this case
+    //  the function returns the original increfed tuple.
     Py_ssize_t len = PyTuple_GET_SIZE(tuple);
 
     PyObject *clone = PyTuple_New(len);
