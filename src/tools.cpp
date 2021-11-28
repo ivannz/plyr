@@ -61,3 +61,23 @@ PyObject *PyDict_SplitItemStrings(
     // could be an empty dict
     return subdict;
 }
+
+
+PyObject* PyTuple_Clone(PyObject *tuple)
+{
+    // apparently PyTuple_GetSlice does not incref the items in the tuple
+    Py_ssize_t len = PyTuple_GET_SIZE(tuple);
+
+    PyObject *clone = PyTuple_New(len);
+    if(clone == NULL)
+        return NULL;
+
+    for(Py_ssize_t j = 0; j < len; j++) {
+        PyObject *item = PyTuple_GET_ITEM(tuple, j);
+
+        Py_INCREF(item);
+        PyTuple_SET_ITEM(clone, j, item);
+    }
+
+    return clone;
+}

@@ -1,5 +1,7 @@
 #include <Python.h>
 
+#include <tools.h>
+
 #include <apply.h>
 #include <validate.h>
 // https://edcjones.tripod.com/refcount.html
