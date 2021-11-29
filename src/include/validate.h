@@ -17,6 +17,18 @@ int _validate_dict(PyObject *main, PyObject *rest, objectstack *stack=NULL);
 int _validate_tuple(PyObject *main, PyObject *rest, objectstack *stack=NULL);
 int _validate_list(PyObject *main, PyObject *rest, objectstack *stack=NULL);
 
+int _raise_TypeError(
+    Py_ssize_t index,
+    PyObject *main,
+    PyObject *obj,
+    objectstack *stack=NULL);
+
+int _raise_SizeError(
+    Py_ssize_t index,
+    PyObject *main,
+    objectstack *stack=NULL);
+
+
 PyObject* validate(PyObject *self, PyObject *args);
 
 extern const PyMethodDef def_validate;

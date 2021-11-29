@@ -16,7 +16,8 @@ PyObject* _ragged(
     PyObject *callable,
     PyObject *objects,
     PyObject *kwargs,
-    const bool star);
+    const bool star,
+    PyObject *finalizer);
 
 
 PyObject* _ragged_dict(
@@ -24,6 +25,7 @@ PyObject* _ragged_dict(
     PyObject *args,
     PyObject *kwargs,
     const bool star,
+    PyObject *finalizer,
     const std::vector<Py_ssize_t> &indices)
 {
     PyObject *main = PyTuple_GET_ITEM(args, indices[0]);
@@ -55,7 +57,7 @@ PyObject* _ragged_dict(
             PyTuple_SetItem(args_, j, item_);
         }
 
-        PyObject *result = _ragged(callable, args_, kwargs, star);
+        PyObject *result = _ragged(callable, args_, kwargs, star, finalizer);
         Py_DECREF(args_);
 
         if(result == NULL) {
@@ -71,11 +73,44 @@ PyObject* _ragged_dict(
 }
 
 
+int _validate_dict(
+    PyObject *args, 
+    const std::vector<Py_ssize_t> &indices)
+{
+    PyObject *main = PyTuple_GET_ITEM(args, indices[0]);
+
+    Py_ssize_t numel = PyDict_Size(main);
+    for(size_t k = 1; k < indices.size() ; k++) {
+        Py_ssize_t j = indices[k];
+
+        PyObject *obj = PyTuple_GET_ITEM(args, j), *key, *item;
+
+        if(!Py_IS_TYPE(obj, Py_TYPE(main)))
+            return _raise_TypeError(j, main, obj, NULL);
+
+        if(numel != PyDict_Size(obj))
+            return _raise_SizeError(j, main, NULL);
+
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(main, &pos, &key, &item)) {
+            if(!PyDict_Contains(obj, key)) {
+                PyErr_SetObject(PyExc_KeyError, key);
+
+                return 0;
+            }
+        }
+    }
+
+    return 1;
+}
+
+
 PyObject* _ragged_list(
     PyObject *callable,
     PyObject *args,
     PyObject *kwargs,
     const bool star,
+    PyObject *finalizer,
     const std::vector<Py_ssize_t> &indices)
 {
     PyObject *main = PyTuple_GET_ITEM(args, indices[0]);
@@ -99,7 +134,7 @@ PyObject* _ragged_list(
             PyTuple_SetItem(args_, j, item_);
         }
 
-        result = _ragged(callable, args_, kwargs, star);
+        result = _ragged(callable, args_, kwargs, star, finalizer);
         Py_DECREF(args_);
 
         if(result == NULL) {
@@ -115,11 +150,35 @@ PyObject* _ragged_list(
 }
 
 
+int _validate_list(
+    PyObject *args, 
+    const std::vector<Py_ssize_t> &indices)
+{
+    PyObject *main = PyTuple_GET_ITEM(args, indices[0]);
+
+    Py_ssize_t numel = PyList_GET_SIZE(main);
+    for(size_t k = 1; k < indices.size() ; k++) {
+        Py_ssize_t j = indices[k];
+
+        PyObject *obj = PyTuple_GET_ITEM(args, j);
+
+        if(!Py_IS_TYPE(obj, Py_TYPE(main)))
+            return _raise_TypeError(j, main, obj, NULL);
+
+        if(numel != PyList_GET_SIZE(obj))
+            return _raise_SizeError(j, main, NULL);
+    }
+
+    return 1;
+}
+
+
 PyObject* _ragged_tuple(
     PyObject *callable,
     PyObject *args,
     PyObject *kwargs,
     const bool star,
+    PyObject *finalizer,
     const std::vector<Py_ssize_t> &indices)
 {
     PyObject *main = PyTuple_GET_ITEM(args, indices[0]);
@@ -143,7 +202,7 @@ PyObject* _ragged_tuple(
             PyTuple_SetItem(args_, j, item_);
         }
 
-        result = _ragged(callable, args_, kwargs, star);
+        result = _ragged(callable, args_, kwargs, star, finalizer);
         Py_DECREF(args_);
 
         if(result == NULL) {
@@ -167,13 +226,36 @@ PyObject* _ragged_tuple(
 }
 
 
+int _validate_tuple(
+    PyObject *args, 
+    const std::vector<Py_ssize_t> &indices)
+{
+    PyObject *main = PyTuple_GET_ITEM(args, indices[0]);
+
+    Py_ssize_t numel = PyTuple_GET_SIZE(main);
+    for(size_t k = 1; k < indices.size() ; k++) {
+        Py_ssize_t j = indices[k];
+
+        PyObject *obj = PyTuple_GET_ITEM(args, j);
+
+        if(!Py_IS_TYPE(obj, Py_TYPE(main)))
+            return _raise_TypeError(j, main, obj, NULL);
+
+        if(numel != PyTuple_GET_SIZE(obj))
+            return _raise_SizeError(j, main, NULL);
+    }
+
+    return 1;
+}
+
+
 PyObject* _ragged(
     PyObject *callable,
     PyObject *args,
     PyObject *kwargs,
-    const bool star)
+    const bool star,
+    PyObject *finalizer)
 {
-
     std::vector<Py_ssize_t> indices = {};
     for(Py_ssize_t j = 0; j < PyTuple_GET_SIZE(args); j++) {
         PyObject *item_ = PyTuple_GET_ITEM(args, j);
@@ -190,47 +272,49 @@ PyObject* _ragged(
         }
     }
 
-    PyObject *result, *main = PyTuple_GET_ITEM(args, indices[0]);
+    PyObject *result = NULL, *main = PyTuple_GET_ITEM(args, indices[0]);
 
     if(PyDict_Check(main)) {
-        if(!_validate_dict(main, args, NULL))
+        if(!_validate_dict(args, indices))
             return NULL;
 
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _ragged_dict(callable, args, kwargs, star, indices);
+        result = _ragged_dict(callable, args, kwargs, star, finalizer, indices);
         Py_LeaveRecursiveCall();
-
-        return result;
 
     }
     else if(PyList_Check(main)) {
-        if(!_validate_list(main, args, NULL))
+        if(!_validate_list(args, indices))
             return NULL;
 
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _ragged_list(callable, args, kwargs, star, indices);
+        result = _ragged_list(callable, args, kwargs, star, finalizer, indices);
         Py_LeaveRecursiveCall();
-
-        return result;
 
     }
     else if(PyTuple_Check(main)) {
-        if(!_validate_tuple(main, args, NULL))
+        if(!_validate_tuple(args, indices))
             return NULL;
 
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _ragged_tuple(callable, args, kwargs, star, indices);
+        result = _ragged_tuple(callable, args, kwargs, star, finalizer, indices);
         Py_LeaveRecursiveCall();
+    }
+    else {
+        char error[160];
+        PyOS_snprintf(
+            error, 160, "Unsupported type '%s'", Py_TYPE(main)->tp_name);
 
-        return result;
+        PyErr_SetString(PyExc_TypeError, error);
     }
 
-    char error[160];
-    PyOS_snprintf(error, 160, "Unsupported type '%s'", Py_TYPE(main)->tp_name);
+    if(finalizer == NULL || result == NULL)
+        return result;
 
-    PyErr_SetString(PyExc_TypeError, error);
+    PyObject *output = PyObject_CallWithSingleArg(finalizer, result, NULL);
+    Py_DECREF(result);
 
-    return NULL;
+    return output;
 }
 
 
@@ -321,8 +405,7 @@ PyObject* ragged(
     }
 
     // make the call, then decref everything we might own
-    PyObject *result = _ragged(
-        callable, objects, kwargs, star);
+    PyObject *result = _ragged(callable, objects, kwargs, star, finalizer);
 
     Py_XDECREF(finalizer);
     Py_DECREF(objects);
