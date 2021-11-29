@@ -8,7 +8,16 @@
 PyDoc_STRVAR(
     __doc__,
     "\n"
-    "`apply`, but with ragged nested objects\n"
+    "ragged(callable, *objects, _star=True, _finalizer=None, **kwargs)\n"
+    "\n"
+    "Safe `apply` that allows ragged-edge nested objects.\n"
+    "See docs for `.apply` for parameters.\n"
+    "\n"
+    "Details\n"
+    "-------\n"
+    "This version of apply implicitly recursively broadcasts any object, that\n"
+    "is not a built-in container to deeper levels of nested built-in containers.\n"
+    "\n"
 );
 
 
