@@ -382,6 +382,8 @@ static PyObject* _apply_base(
     PyObject *item_, *args = PyTuple_New(1+len);
     if(args == NULL) return NULL;
 
+    // reusing `rest` works in our case since the base call actually reassembles
+    //  the full tuple: (main,) + rest
     Py_INCREF(main);
     PyTuple_SET_ITEM(args, 0, main);
     for(Py_ssize_t j = 0; j < len; j++) {

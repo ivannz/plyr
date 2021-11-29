@@ -1,7 +1,7 @@
 #include <Python.h>
 
 #include <ragged.h>
-
+#include <validate.h>
 #include <tools.h>
 
 
@@ -16,7 +16,6 @@ PyObject* _ragged(
     PyObject *callable,
     PyObject *objects,
     PyObject *kwargs,
-    const bool safe,
     const bool star);
 
 
@@ -24,53 +23,49 @@ PyObject* _ragged_dict(
     PyObject *callable,
     PyObject *args,
     PyObject *kwargs,
-    const bool safe,
     const bool star,
     const std::vector<Py_ssize_t> &indices)
 {
     PyObject *main = PyTuple_GET_ITEM(args, indices[0]);
 
-    // we reuse the same tuple for each item in the dict
-    PyObject *args_ = PyTuple_Clone(args);
-    if(args_ == NULL)
-        return NULL;
-
     PyObject *output = PyDict_New();
-    if(output == NULL) {
-        Py_DECREF(args_);
-
+    if(output == NULL)
         return NULL;
-    }
 
     Py_ssize_t pos = 0;
     PyObject *key, *item_, *main_;
     while(PyDict_Next(main, &pos, &key, &main_)) {
-        // `SetItem` makes sure to decref the existing object, before replacing
-        //  it with a new one, see `_apply_dict`
+        // clone the args and replace containers with their respecitve items
+        // We used to reuse the same single tuple object, but it doesn't work
+        //  correctly, since the object calling protocol implies that the args
+        //  can be simply increfed instead of being copied
+        PyObject *args_ = PyTuple_Clone(args);
+        if(args_ == NULL) {
+            Py_DECREF(output);
+            return NULL;
+        }
+
         Py_INCREF(main_);
         PyTuple_SetItem(args_, indices[0], main_);
         for(size_t k = 1; k < indices.size() ; k++) {
             Py_ssize_t j = indices[k];
-            item_ = PyDict_GetItem(PyTuple_GET_ITEM(args, j), key);
+            item_ = PyDict_GetItem(PyTuple_GET_ITEM(args_, j), key);
 
             Py_INCREF(item_);
             PyTuple_SetItem(args_, j, item_);
         }
 
-        PyObject *result = _ragged(callable, args_, kwargs, safe, star);
-        if(result == NULL) {
-            Py_DECREF(args_);
+        PyObject *result = _ragged(callable, args_, kwargs, star);
+        Py_DECREF(args_);
 
+        if(result == NULL) {
             Py_DECREF(output);
             return NULL;
         }
 
         PyDict_SetItem(output, key, result);
-
         Py_DECREF(result);
     }
-
-    Py_DECREF(args_);
 
     return output;
 }
@@ -80,44 +75,41 @@ PyObject* _ragged_list(
     PyObject *callable,
     PyObject *args,
     PyObject *kwargs,
-    const bool safe,
     const bool star,
     const std::vector<Py_ssize_t> &indices)
 {
     PyObject *main = PyTuple_GET_ITEM(args, indices[0]);
 
-    PyObject *args_ = PyTuple_Clone(args);
-    if(args_ == NULL)
-        return NULL;
-
     Py_ssize_t numel = PyList_GET_SIZE(main);
     PyObject *output = PyList_New(numel), *result;
-    if(output == NULL) {
-        Py_DECREF(args_);
-
+    if(output == NULL)
         return NULL;
-    }
 
     for(Py_ssize_t pos = 0; pos < numel; pos++) {
+        PyObject *args_ = PyTuple_Clone(args);
+        if(args_ == NULL) {
+            Py_DECREF(output);
+            return NULL;
+        }
+
         for(Py_ssize_t j : indices) {
-            PyObject *item_ = PyList_GET_ITEM(PyTuple_GET_ITEM(args, j), pos);
+            PyObject *item_ = PyList_GET_ITEM(PyTuple_GET_ITEM(args_, j), pos);
 
             Py_INCREF(item_);
             PyTuple_SetItem(args_, j, item_);
         }
 
-        result = _ragged(callable, args_, kwargs, safe, star);
-        if(result == NULL) {
-            Py_DECREF(args_);
+        result = _ragged(callable, args_, kwargs, star);
+        Py_DECREF(args_);
 
+        if(result == NULL) {
             Py_DECREF(output);
             return NULL;
         }
 
+        // not decrefing `result`, since List steals ref
         PyList_SET_ITEM(output, pos, result);
     }
-
-    Py_DECREF(args_);
 
     return output;
 }
@@ -127,44 +119,40 @@ PyObject* _ragged_tuple(
     PyObject *callable,
     PyObject *args,
     PyObject *kwargs,
-    const bool safe,
     const bool star,
     const std::vector<Py_ssize_t> &indices)
 {
     PyObject *main = PyTuple_GET_ITEM(args, indices[0]);
 
-    PyObject *args_ = PyTuple_Clone(args);
-    if(args_ == NULL)
-        return NULL;
-
     Py_ssize_t numel = PyList_GET_SIZE(main);
     PyObject *output = PyTuple_New(numel), *result;
-    if(output == NULL) {
-        Py_DECREF(args_);
-
+    if(output == NULL)
         return NULL;
-    }
 
     for(Py_ssize_t pos = 0; pos < numel; pos++) {
+        PyObject *args_ = PyTuple_Clone(args);
+        if(args_ == NULL) {
+            Py_DECREF(output);
+            return NULL;
+        }
+
         for(Py_ssize_t j : indices) {
-            PyObject *item_ = PyTuple_GET_ITEM(PyTuple_GET_ITEM(args, j), pos);
+            PyObject *item_ = PyTuple_GET_ITEM(PyTuple_GET_ITEM(args_, j), pos);
 
             Py_INCREF(item_);
             PyTuple_SetItem(args_, j, item_);
         }
 
-        result = _ragged(callable, args_, kwargs, safe, star);
-        if(result == NULL) {
-            Py_DECREF(args_);
+        result = _ragged(callable, args_, kwargs, star);
+        Py_DECREF(args_);
 
+        if(result == NULL) {
             Py_DECREF(output);
             return NULL;
         }
 
         PyTuple_SET_ITEM(output, pos, result);
     }
-
-    Py_DECREF(args_);
 
     if(PyTuple_CheckExact(main))
         return output;
@@ -183,15 +171,11 @@ PyObject* _ragged(
     PyObject *callable,
     PyObject *args,
     PyObject *kwargs,
-    const bool safe,
     const bool star)
 {
-    assert(!safe);
 
     std::vector<Py_ssize_t> indices = {};
-
-    Py_ssize_t len = PyTuple_GET_SIZE(args);
-    for(Py_ssize_t j = 0; j < len; j++) {
+    for(Py_ssize_t j = 0; j < PyTuple_GET_SIZE(args); j++) {
         PyObject *item_ = PyTuple_GET_ITEM(args, j);
         if(PyDict_Check(item_) || PyTuple_Check(item_) || PyList_Check(item_)) {
             indices.push_back(j);
@@ -209,22 +193,33 @@ PyObject* _ragged(
     PyObject *result, *main = PyTuple_GET_ITEM(args, indices[0]);
 
     if(PyDict_Check(main)) {
+        if(!_validate_dict(main, args, NULL))
+            return NULL;
+
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _ragged_dict(callable, args, kwargs, safe, star, indices);
+        result = _ragged_dict(callable, args, kwargs, star, indices);
         Py_LeaveRecursiveCall();
 
         return result;
 
-    } else if(PyList_Check(main)) {
+    }
+    else if(PyList_Check(main)) {
+        if(!_validate_list(main, args, NULL))
+            return NULL;
+
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _ragged_list(callable, args, kwargs, safe, star, indices);
+        result = _ragged_list(callable, args, kwargs, star, indices);
         Py_LeaveRecursiveCall();
 
         return result;
 
-    } else if(PyTuple_Check(main)) {
+    }
+    else if(PyTuple_Check(main)) {
+        if(!_validate_tuple(main, args, NULL))
+            return NULL;
+
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _ragged_tuple(callable, args, kwargs, safe, star, indices);
+        result = _ragged_tuple(callable, args, kwargs, star, indices);
         Py_LeaveRecursiveCall();
 
         return result;
@@ -276,14 +271,14 @@ PyObject* ragged(
     PyObject *args,
     PyObject *kwargs)
 {
-    int safe = 0, star = 1;
+    int star = 1;
 
     PyObject *callable = NULL, *objects = NULL, *finalizer=NULL;
     if(!parse_ragged_args(args, &callable, &objects))
         return NULL;
 
     if (kwargs) {
-        static char *kwlist[] = {"_safe", "_star", "_finalizer", NULL};
+        static char *kwlist[] = {"_star", "_finalizer", NULL};
 
         PyObject* own = PyDict_SplitItemStrings(kwargs, kwlist, true);
         if (own == NULL) {
@@ -301,7 +296,7 @@ PyObject* ragged(
         }
 
         int parsed = PyArg_ParseTupleAndKeywords(
-            empty, own, "|$ppO:ragged", kwlist, &safe, &star, &finalizer);
+            empty, own, "|$pO:ragged", kwlist, &star, &finalizer);
 
         Py_DECREF(empty);
         if (!parsed) {
@@ -327,7 +322,7 @@ PyObject* ragged(
 
     // make the call, then decref everything we might own
     PyObject *result = _ragged(
-        callable, objects, kwargs, safe, star);
+        callable, objects, kwargs, star);
 
     Py_XDECREF(finalizer);
     Py_DECREF(objects);
