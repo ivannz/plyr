@@ -1,22 +1,32 @@
 # Plyr: computing on nested containers 
 
-`plyr` \[/plaɪ'ə/\], derived from `applier`, is a python C-extension, that implements a `map`-like logic, which computes a specified function on the lower-most non-container data of arbitrarily nested *built-in* python containers, i.e. dicts, lists, tuples. It automatically unpacks nested containers in order to call the same function on their underlying non-container objects and then reassembles the structures. See the docstring of `plyr.apply` for details.
+`plyr` \[/plaɪ'ə/\], derived from `applier`, is a python C-extension, that implements
+a `map`-like logic, which computes a specified function on the lower-most non-container
+data of arbitrarily nested *built-in* python containers, i.e. dicts, lists, tuples.
+It automatically unpacks nested containers in order to call the same function on their
+underlying non-container objects and then reassembles the structures. See the docstring
+of `plyr.apply` for details.
 
-`plyr` \[/plaɪ'ə/\] is derived from `applier`, but also happens to coincide with a similarly named library for [`R` statistical computations language](https://www.r-project.org/), which streamlines dataframe and vector/matrix transformations.
+`plyr` happens to coincide with a similarly named library for [`R` statistical computations
+language](https://www.r-project.org/), which streamlines dataframe and vector/matrix
+transformations.
 
 
 ## Example
 
-Below we provide hopefully an illustrative example of the cases `plyr` might be useful in.
+Below we provide an example, which, we hope, illustrates the cases `plyr` might be useful in.
 
 ```python
 import plyr
+from collections import namedtuple
+
+nt = namedtuple('nt', 'u,v')
 
 # add the leaf data in a pair of nested objects
 plyr.apply(
     lambda u, v: u + v,
-    [{'a': [1, 2, 3]}, {'b': 1, 'z': 'abc'}, ],
-    [{'a': [4, 6, 8]}, {'b': 4, 'z': 'xyz'}, ],
+    [{'a': (1, 2, 3), 'z': 3.1415}, nt(1, 'abc')],
+    [{'a': (4, 6, 8), 'z': 2.7128}, nt(4, 'xyz')],
     # _star=True,  # (default) call fn(d1, d2, **kwargs)
 )
 # output: [{'a': [5, 8, 11]}, {'b': 5, 'z': 'abcxyz'}]
@@ -24,19 +34,23 @@ plyr.apply(
 # join strings in a pair of tuples
 plyr.apply(
     ' -->> '.join,
-    ('a-b-c', 'u-v-w', 'x-y-z',),
+    ('abc', 'uvw', 'xyz',),
     ('123', '456', '789',),
     _star=False,  # call fn((d1, d2,), **kwargs)
 )
 # output: ('abc -->> 123', 'uvw -->> 456', 'xyz -->> 789')
 ```
 
-By default `.apply` performs safety checks to ensure indentical structure if multiple nested objects are given. If the arguments have identical structure by design, then these integrity checks may be turned off by specifying `_safe=False`. Please refer to the docs of `plyr.apply`.
+By default `.apply` performs safety checks to ensure identical structure if multiple
+nested objects are given. If the arguments have identical structure by design, then
+these integrity checks may be turned off by specifying `_safe=False`. Please refer
+to the docs of `plyr.apply`.
 
 
 ## Other examples
 
-Below we perform something fancy with `numpy`. Specifically we stack experimental results (dicts of arrays), then get the standard deviation between the results
+Below we perform something fancy with `numpy`. Specifically, we stack outputs from some
+experiments (dicts of arrays), to get the standard deviation between the results.
 
 ```python
 import plyr
@@ -65,4 +79,5 @@ shapes = plyr.apply(lambda x: x.shape, res)
 plyr.apply(np.std, res, axis=0)
 ```
 
-You may notice that `.apply` is very _straightforward_: it applies the specified function regardless of the leaf data type.
+You may notice that `.apply` is very _straightforward_: it applies the specified function
+regardless of the leaf data type.
