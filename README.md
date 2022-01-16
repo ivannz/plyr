@@ -46,6 +46,100 @@ nested objects are given. If the arguments have identical structure by design, t
 these integrity checks may be turned off by specifying `_safe=False`. Please refer
 to the docs of `plyr.apply`.
 
+`plyr.ragged` is a special version of `.apply` which implements leaf broadcasting
+semantics. When processing multiple nested objects it allows one structure to subsume
+the other structures: any intermediate leaf data **is broadcasted deeper into the hierarchy**
+of the other nested structures. Please refer to `./doc/mapping_structures.ipynb` for
+details.
+
+
+## Serializing and deserializing
+
+Serialization and deserialization of nested objects can be done by these procedures:
+
+```python
+import plyr
+
+
+def flatten(struct, *, flat=None):
+    """Get a flat depth-first representation of the nested object.
+
+    Parameters
+    ----------
+    struct : nested object
+        The nested object to serialize.
+
+    flat : list, or None
+        A flat iterable container to serially append the leaf data to.
+
+    Returns
+    -------
+    flat : list
+        The container populated with the leaves in depth-first structure order.
+
+    struct : nested object
+        The skeletal structure of the nested object with arbitrary leaf data.
+    """
+    if not isinstance(flat, list):
+        flat = []
+
+    return flat, plyr.apply(flat.append, struct)
+
+
+def unflatten(flat, struct, *, raises=True):
+    """Place the data from iterable into the specified nested structure.
+
+    Parameters
+    ----------
+    flat : iterable
+        The iterable that supplies the data for the nested object in fifo
+        depth-first order.
+
+    struct : nested object
+        The desired structure of the nested object (leaf data is intact).
+
+    Returns
+    -------
+    result : nested object
+        The nested object with the specified hierarchy populated by the data
+        from the iterable.
+
+    Details
+    -------
+    Raises `StopItertaion` if the iterable is exhausted before the structure is
+    completely rebuilt. Data consumed by an unsuccessful `unflatten` is LOST.
+    """
+    # use `next(it, None)` to fill missing leaves with `None`-s.
+    if not raises:
+        return plyr.apply(lambda *a, it=iter(flat): next(it, None), struct)
+
+    return plyr.apply(lambda *a, it=iter(flat): next(it), struct)
+    # return plyr.ragged(lambda it, *a: next(it), iter(flat), struct)
+```
+
+The following snippet shows how to represent a given nested object as a flat list
+and then undo the process.
+
+```python
+o = [1, (2, 3), {'a': (4, 5), 'z': {'a': 6}}, 7]
+
+flat, skel = flatten(o)
+assert o == unflatten(flat, skel)
+
+flat
+# output: ([1, 2, 3, 4, 5, 6, 7]
+```
+
+This example demonstrates how to unpack a stream of data into nested objects.
+
+```python
+stream, _ = iter(range(13)), None
+
+struct = ({'foo': _, 'bar': [_, _]}, _)
+
+objects = [unflatten(stream, struct) for _ in range(3)]
+```
+
 
 ## Other Examples
 
