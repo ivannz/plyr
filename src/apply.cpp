@@ -11,7 +11,7 @@
 PyDoc_STRVAR(
     __doc__,
     "\n"
-    "apply(callable, *objects, _safe=True, _star=True, _finalizer=None, **kwargs)\n"
+    "apply(callable, *objects, _safe=True, _star=True, _finalizer=None, _strict=True, **kwargs)\n"
     "\n"
     "Compute the function using the leaf data of the nested objects as arguments.\n"
     "\n"
@@ -53,6 +53,13 @@ PyDoc_STRVAR(
     "\n"
     "    OMIT the `_finalizer` kwarg if finalization is NOT REQUIRED.\n"
     "\n"
+    "_strict : bool, default=True\n"
+    "    Whether to treat the subtypes of built-in containers as non-leaf nested\n"
+    "    containers and descend into them. Upon rebuilding subtypes are regressed\n"
+    "    are rebuilt as their built-in base types.\n"
+    "\n"
+    "    NOTE `_strict` does not affect treatment of namedtuples (SEE caveat).\n"
+    "\n"
     "**kwargs : variable keyword arguments\n"
     "   The optional keyword arguments passed AS IS to the `callable` every\n"
     "   time it is invoked on the leaf data.\n"
@@ -79,6 +86,16 @@ PyDoc_STRVAR(
     "    NOTE: namedtuples are compared as tuples and not as dicts, due to them\n"
     "          being runtime-constructed sub-classes of tuples. Hence for them\n"
     "          only the order matters and not their fields' names.\n"
+    "\n"
+    "Caveat on namedtuples\n"
+    "---------------------\n"
+    "Namedtuple types are considered to be immutable key-value mappings and are\n"
+    "treated as dict-like containers with keys restricted to valid python identifiers.\n"
+    "When rebuilding a namedtuple, we check if a container is a tuple subtype AND\n"
+    "possesses `_fields` attribute as suggested in their proposal:\n"
+    "    https://mail.python.org/pipermail//python-ideas/2014-January/024886.html\n"
+    "Even though NTs are technically tuples, `_strict=True` still treats them as\n"
+    "containers, rather than leaves.\n"
     "\n"
     "Details\n"
     "-------\n"
@@ -107,7 +124,8 @@ PyObject* _apply(
     const bool safe,
     const bool star,
     PyObject *kwargs,
-    PyObject *finalizer);
+    PyObject *finalizer,
+    const bool strict);
 
 
 static PyObject* _apply_dict(
@@ -117,7 +135,8 @@ static PyObject* _apply_dict(
     const bool safe,
     const bool star,
     PyObject *kwargs,
-    PyObject *finalizer)
+    PyObject *finalizer,
+    const bool strict)
 {
     Py_ssize_t len = PyTuple_GET_SIZE(rest);
     PyObject *key, *main_, *item_, *rest_ = PyTuple_New(len);
@@ -152,7 +171,7 @@ static PyObject* _apply_dict(
         }
 
         // `result` is a new object, for which we are now responsible
-        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer);
+        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict);
         if(result == NULL) {
             Py_DECREF(rest_);
 
@@ -186,7 +205,8 @@ static PyObject* _apply_tuple(
     const bool safe,
     const bool star,
     PyObject *kwargs,
-    PyObject *finalizer)
+    PyObject *finalizer,
+    const bool strict)
 {
     Py_ssize_t len = PyTuple_GET_SIZE(rest);
     PyObject *main_, *item_, *rest_ = PyTuple_New(len);
@@ -213,7 +233,7 @@ static PyObject* _apply_tuple(
             PyTuple_SET_ITEM(rest_, j, item_);
         }
 
-        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer);
+        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict);
         if(result == NULL) {
             Py_DECREF(rest_);
             Py_DECREF(output);
@@ -256,7 +276,8 @@ static PyObject* _apply_list(
     const bool safe,
     const bool star,
     PyObject *kwargs,
-    PyObject *finalizer)
+    PyObject *finalizer,
+    const bool strict)
 {
     Py_ssize_t len = PyTuple_GET_SIZE(rest);
     PyObject *main_, *item_, *rest_ = PyTuple_New(len);
@@ -283,7 +304,7 @@ static PyObject* _apply_list(
             PyTuple_SET_ITEM(rest_, j, item_);
         }
 
-        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer);
+        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict);
         if(result == NULL) {
             Py_DECREF(rest_);
             Py_DECREF(output);
@@ -310,7 +331,8 @@ static PyObject* _apply_mapping(
     const bool safe,
     const bool star,
     PyObject *kwargs,
-    PyObject *finalizer)
+    PyObject *finalizer,
+    const bool strict)
 {
     // XXX it's unlikely that we will ever use this branch, because as docs say
     //  it is impossible to know the type of keys of a mapping at runtime, hence
@@ -353,7 +375,7 @@ static PyObject* _apply_mapping(
 
         Py_DECREF(result);
 
-        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer);
+        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict);
         if(result == NULL) break;
 
         PyDict_SetItem(output, key, result);
@@ -411,35 +433,38 @@ PyObject* _apply(
     const bool safe,
     const bool star,
     PyObject *kwargs,
-    PyObject *finalizer)
+    PyObject *finalizer,
+    const bool strict)
 {
     PyObject *result;
 
-    if(PyDict_Check(main)) {
+    if(PyDict_CheckExact(main) || (!strict && PyDict_Check(main))) {
         if(safe)
             if(!_validate_dict(main, rest))
                 return NULL;
 
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _apply_dict(callable, main, rest, safe, star, kwargs, finalizer);
+        result = _apply_dict(callable, main, rest, safe, star, kwargs, finalizer, strict);
         Py_LeaveRecursiveCall();
 
-    } else if(PyTuple_Check(main)) {
+    } else if(
+        PyTupleNamedTuple_CheckExact(main) || (!strict && PyTuple_Check(main))
+    ) {
         if(safe)
             if(!_validate_tuple(main, rest))
                 return NULL;
 
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _apply_tuple(callable, main, rest, safe, star, kwargs, finalizer);
+        result = _apply_tuple(callable, main, rest, safe, star, kwargs, finalizer, strict);
         Py_LeaveRecursiveCall();
 
-    } else if(PyList_Check(main)) {
+    } else if(PyList_CheckExact(main) || (!strict && PyList_Check(main))) {
         if(safe)
             if(!_validate_list(main, rest))
                 return NULL;
 
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _apply_list(callable, main, rest, safe, star, kwargs, finalizer);
+        result = _apply_list(callable, main, rest, safe, star, kwargs, finalizer, strict);
         Py_LeaveRecursiveCall();
 
     } else {
@@ -498,7 +523,7 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     // from the url at the top: {API 1.2.1} the call mechanism guarantees
     //  to hold a reference to every argument for the duration of the call.
-    int safe = 1, star = 1;
+    int safe = 1, star = 1, strict=1;
     PyObject *callable = NULL, *main = NULL, *rest = NULL, *finalizer=NULL;
 
     // handle `apply(fn, main, *rest, ...)`
@@ -510,7 +535,7 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
     // handle `apply(..., *, _star, _safe, _finalizer, **kwargs)`
     // XXX if the finalizer is not required, the kwarg must be omitted.
     if (kwargs) {
-        static char *kwlist[] = {"_safe", "_star", "_finalizer", NULL};
+        static char *kwlist[] = {"_safe", "_star", "_finalizer", "_strict", NULL};
 
         // Pop apply's kwargs from `kwargs` so that it could be passed along to
         //  `_apply_base`.
@@ -532,7 +557,7 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
         // Thus we hold on to the `finalizer` in case its only ref was
         //  the `kwargs`, which we tinkered with just above.
         int parsed = PyArg_ParseTupleAndKeywords(
-            empty, own, "|$ppO:apply", kwlist, &safe, &star, &finalizer);
+            empty, own, "|$ppOp:apply", kwlist, &safe, &star, &finalizer, &strict);
 
         Py_DECREF(empty);
         if (!parsed) {
@@ -557,7 +582,7 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
 
     // make the call, then decref everything we might own
     PyObject *result = _apply(
-        callable, main, rest, safe, star, kwargs, finalizer);
+        callable, main, rest, safe, star, kwargs, finalizer, strict);
 
     Py_XDECREF(finalizer);
     Py_DECREF(rest);

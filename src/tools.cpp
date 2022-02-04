@@ -82,3 +82,24 @@ PyObject* PyTuple_Clone(PyObject *tuple)
 
     return clone;
 }
+
+int PyTupleNamedTuple_CheckExact(PyObject *p)
+{
+    // tuple and namedtuple are __almost__ identical, since the latter
+    // /is a syntactic convenience for accesing tuples data through named
+    // fields.
+    if(!PyTuple_Check(p))
+        return 0;
+
+    if(PyTuple_CheckExact(p))
+        return 1;
+
+    // "isinstance(o, tuple) and hasattr(o, '_fields')" is the corect way to
+    //  to cehck if a tuple is named one.
+    //   https://mail.python.org/pipermail//python-ideas/2014-January/024886.html
+    //   https://bugs.python.org/issue7796
+    if(PyObject_HasAttrString(p, "_fields"))
+        return 1;
+
+    return 0;
+}

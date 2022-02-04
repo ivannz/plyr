@@ -10,3 +10,6 @@ PyObject *PyDict_SplitItemStrings(
 
 PyObject* PyTuple_Clone(
     PyObject *tuple);
+
+int PyTupleNamedTuple_CheckExact(
+    PyObject *p);
