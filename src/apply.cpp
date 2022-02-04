@@ -415,7 +415,10 @@ static PyObject* _apply_base(
         PyTuple_SET_ITEM(args, j + 1, item_);
     }
 
-    if (star) {
+    if (callable == Py_None) {
+        return args;
+
+    } else if (star) {
         output = PyObject_Call(callable, args, kwargs);
     } else {
         output = PyObject_CallWithSingleArg(callable, args, kwargs);
@@ -506,8 +509,8 @@ int parse_apply_args(
     if (!parsed)
         return 0;
 
-    if(!PyCallable_Check(*callable)) {
-        PyErr_SetString(PyExc_TypeError, "The first argument must be a callable.");
+    if(!(PyCallable_Check(*callable) || *callable == Py_None)) {
+        PyErr_SetString(PyExc_TypeError, "The first argument must be a callable or `None`.");
         return 0;
     }
 
