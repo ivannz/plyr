@@ -46,7 +46,7 @@ PyObject* _ragged_dict(
     Py_ssize_t pos = 0;
     PyObject *key, *item_, *main_;
     while(PyDict_Next(main, &pos, &key, &main_)) {
-        // clone the args and replace containers with their respecitve items
+        // clone the args and replace containers with their respective items
         // We used to reuse the same single tuple object, but it doesn't work
         //  correctly, since the object calling protocol implies that the args
         //  can be simply increfed instead of being copied
@@ -225,7 +225,7 @@ PyObject* _ragged_tuple(
     if(PyTuple_CheckExact(main))
         return output;
 
-    if(!PyObject_HasAttrString(main, "_fields"))
+    if(!PyNamedTuple_CheckExact(main))
         return output;
 
     PyObject *namedtuple = Py_TYPE(main)->tp_new(Py_TYPE(main), output, NULL);

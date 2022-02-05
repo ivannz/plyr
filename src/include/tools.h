@@ -11,5 +11,8 @@ PyObject *PyDict_SplitItemStrings(
 PyObject* PyTuple_Clone(
     PyObject *tuple);
 
+int PyNamedTuple_CheckExact(
+    PyObject *p);
+
 int PyTupleNamedTuple_CheckExact(
     PyObject *p);

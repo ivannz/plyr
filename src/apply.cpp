@@ -16,9 +16,9 @@ PyDoc_STRVAR(
     "Compute the function using the leaf data of the nested objects as arguments.\n"
     "\n"
     "A `nested object` is either a python object (object, str, numpy array, torch\n"
-    "tensor, etc.) or a subclass of one of python's built-in containers (dict,\n"
-    "list, or tuple), that consists of other nested objects. The `leaf data`\n"
-    "is any non-contaier python object at the bottom of the nested structure.\n"
+    "tensor, etc.) or one of python's built-in containers (dict, list, or tuple),\n"
+    "that consists of other nested objects. The `leaf data` is any non-container\n"
+    "python object at the bottom of the nested structure.\n"
     "\n"
     "Parameters\n"
     "----------\n"
@@ -55,8 +55,8 @@ PyDoc_STRVAR(
     "\n"
     "_strict : bool, default=True\n"
     "    Whether to treat the subtypes of built-in containers as non-leaf nested\n"
-    "    containers and descend into them. Upon rebuilding subtypes are regressed\n"
-    "    are rebuilt as their built-in base types.\n"
+    "    containers and descend into them. NOTE, that when being rebuilt, subtypes\n"
+    "    REGRESS to their built-in base types.\n"
     "\n"
     "    NOTE `_strict` does not affect treatment of namedtuples (SEE caveat).\n"
     "\n"
@@ -89,13 +89,14 @@ PyDoc_STRVAR(
     "\n"
     "Caveat on namedtuples\n"
     "---------------------\n"
-    "Namedtuple types are considered to be immutable key-value mappings and are\n"
-    "treated as dict-like containers with keys restricted to valid python identifiers.\n"
-    "When rebuilding a namedtuple, we check if a container is a tuple subtype AND\n"
-    "possesses `_fields` attribute as suggested in their proposal:\n"
+    "`apply` treats namedtuples as nested containers regardless of the `_strict`\n"
+    "flag. This was designed intentionally, since NTs are tuples with attributes\n"
+    "identifying the items within, and as such can be viewed as immutable dict-like\n"
+    "structures. Detection of NTs, however is somewhat duck-typed and non-robust:\n"
+    "we check if a container's type ONLY from a `tuple` AND the object itself has\n"
+    "`_fields` attribute as suggested in this discussion:\n"
+    "\n"
     "    https://mail.python.org/pipermail//python-ideas/2014-January/024886.html\n"
-    "Even though NTs are technically tuples, `_strict=True` still treats them as\n"
-    "containers, rather than leaves.\n"
     "\n"
     "Details\n"
     "-------\n"
@@ -251,15 +252,12 @@ static PyObject* _apply_tuple(
     if(PyTuple_CheckExact(main))
         return output;
 
-    // Preserve namedtuple, devolve others to builtin tuples
-    // "isinstance(o, tuple) and hasattr(o, '_fields')" is the corect way.
-    //   https://mail.python.org/pipermail//python-ideas/2014-January/024886.html
-    //   https://bugs.python.org/issue7796
-    if(!PyObject_HasAttrString(main, "_fields"))
+    // Preserve namedtuple, devolve others to built-in tuples
+    if(!PyNamedTuple_CheckExact(main))
         return output;
 
-    // since `namedtuple`-s are immutable and derived from `tuple`,
-    //  we can just call `tp_new` on them
+    // since `namedtuple`-s are immutable and derived from `tuple`, we can
+    //  just call `tp_new` on them
     // XXX fix this if the namedtuple's implementation changes
     // https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new
     PyObject *namedtuple = Py_TYPE(main)->tp_new(Py_TYPE(main), output, NULL);
@@ -521,7 +519,7 @@ int parse_apply_args(
 
 PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    // from the url at the top: {API 1.2.1} the call mechanism guarantees
+    // from the URL at the top: {API 1.2.1} the call mechanism guarantees
     //  to hold a reference to every argument for the duration of the call.
     int safe = 1, star = 1, strict=1;
     PyObject *callable = NULL, *main = NULL, *rest = NULL, *finalizer=NULL;
