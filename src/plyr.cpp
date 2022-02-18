@@ -132,8 +132,94 @@ static struct PyModuleDef moduledef = {
 };
 
 
+static PyMethodDef empty_methods[] = {
+    {NULL},
+};
+
+
+static PyTypeObject LeafTuple = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "plyr.Tuple",
+    .tp_doc = PyDoc_STR("Non-container tuple."),
+    .tp_basicsize = sizeof(PyTupleObject),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_init = PyTuple_Type.tp_init,
+    .tp_methods = empty_methods,
+};
+
+
+static PyTypeObject LeafList = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "plyr.List",
+    .tp_doc = PyDoc_STR("Non-container List."),
+    .tp_basicsize = sizeof(PyListObject),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_init = PyList_Type.tp_init,
+    .tp_methods = empty_methods,
+};
+
+
+static PyTypeObject LeafDict = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "plyr.Dict",
+    .tp_doc = PyDoc_STR("Non-container Dict."),
+    .tp_basicsize = sizeof(PyDictObject),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_init = PyDict_Type.tp_init,
+    .tp_methods = empty_methods,
+};
+
+
 PyMODINIT_FUNC
 PyInit_plyr(void)
 {
-    return PyModule_Create(&moduledef);
+    bool init_failed = false;
+
+    // prepare the leaf container types (excluding namedtuple)
+    LeafTuple.tp_base = &PyTuple_Type;
+    if (PyType_Ready(&LeafTuple) < 0)
+        return NULL;
+
+    LeafList.tp_base = &PyList_Type;
+    if (PyType_Ready(&LeafList) < 0)
+        return NULL;
+
+    LeafDict.tp_base = &PyDict_Type;
+    if (PyType_Ready(&LeafDict) < 0)
+        return NULL;
+
+    PyObject *mod = PyModule_Create(&moduledef);
+    if (mod == NULL)
+        return NULL;
+
+    /// register custom types (NB AddModule steals refs on success)
+    Py_INCREF(&LeafTuple);
+    Py_INCREF(&LeafList);
+    Py_INCREF(&LeafDict);
+    if (PyModule_AddObject(mod, "Tuple", (PyObject *) &LeafTuple) < 0) {
+        Py_DECREF(&LeafTuple);
+        init_failed = true;
+    }
+
+    if (PyModule_AddObject(mod, "List", (PyObject *) &LeafList) < 0) {
+        Py_DECREF(&LeafList);
+        init_failed = true;
+    }
+
+    if (PyModule_AddObject(mod, "Dict", (PyObject *) &LeafDict) < 0) {
+        Py_DECREF(&LeafDict);
+        init_failed = true;
+    }
+
+    // do not need to decref created types since either thery have been stolen
+    // by AddObject on success, or have already been decrefed on failure
+    if(init_failed) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+
+    return mod;
 }
