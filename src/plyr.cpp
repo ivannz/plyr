@@ -137,10 +137,12 @@ static PyMethodDef empty_methods[] = {
 };
 
 
-static PyTypeObject LeafTuple = {
+static PyTypeObject AtomicTuple = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "plyr.Tuple",
-    .tp_doc = PyDoc_STR("Non-container tuple."),
+    .tp_name = "plyr.AtomicTuple",
+    .tp_doc = PyDoc_STR(
+        "An atomic tuple, NOT considered by plyr as a nested container."
+    ),
     .tp_basicsize = sizeof(PyTupleObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -149,10 +151,12 @@ static PyTypeObject LeafTuple = {
 };
 
 
-static PyTypeObject LeafList = {
+static PyTypeObject AtomicList = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "plyr.List",
-    .tp_doc = PyDoc_STR("Non-container List."),
+    .tp_name = "plyr.AtomicList",
+    .tp_doc = PyDoc_STR(
+        "An atomic list, NOT considered by plyr as a nested container."
+    ),
     .tp_basicsize = sizeof(PyListObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -161,10 +165,12 @@ static PyTypeObject LeafList = {
 };
 
 
-static PyTypeObject LeafDict = {
+static PyTypeObject AtomicDict = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "plyr.Dict",
-    .tp_doc = PyDoc_STR("Non-container Dict."),
+    .tp_name = "plyr.AtomicDict",
+    .tp_doc = PyDoc_STR(
+        "An atomic dict, NOT considered by plyr as a nested container."
+    ),
     .tp_basicsize = sizeof(PyDictObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -179,16 +185,16 @@ PyInit_plyr(void)
     bool init_failed = false;
 
     // prepare the leaf container types (excluding namedtuple)
-    LeafTuple.tp_base = &PyTuple_Type;
-    if (PyType_Ready(&LeafTuple) < 0)
+    AtomicTuple.tp_base = &PyTuple_Type;
+    if (PyType_Ready(&AtomicTuple) < 0)
         return NULL;
 
-    LeafList.tp_base = &PyList_Type;
-    if (PyType_Ready(&LeafList) < 0)
+    AtomicList.tp_base = &PyList_Type;
+    if (PyType_Ready(&AtomicList) < 0)
         return NULL;
 
-    LeafDict.tp_base = &PyDict_Type;
-    if (PyType_Ready(&LeafDict) < 0)
+    AtomicDict.tp_base = &PyDict_Type;
+    if (PyType_Ready(&AtomicDict) < 0)
         return NULL;
 
     PyObject *mod = PyModule_Create(&moduledef);
@@ -196,21 +202,21 @@ PyInit_plyr(void)
         return NULL;
 
     /// register custom types (NB AddModule steals refs on success)
-    Py_INCREF(&LeafTuple);
-    Py_INCREF(&LeafList);
-    Py_INCREF(&LeafDict);
-    if (PyModule_AddObject(mod, "Tuple", (PyObject *) &LeafTuple) < 0) {
-        Py_DECREF(&LeafTuple);
+    Py_INCREF(&AtomicTuple);
+    Py_INCREF(&AtomicList);
+    Py_INCREF(&AtomicDict);
+    if (PyModule_AddObject(mod, "AtomicTuple", (PyObject *) &AtomicTuple) < 0) {
+        Py_DECREF(&AtomicTuple);
         init_failed = true;
     }
 
-    if (PyModule_AddObject(mod, "List", (PyObject *) &LeafList) < 0) {
-        Py_DECREF(&LeafList);
+    if (PyModule_AddObject(mod, "AtomicList", (PyObject *) &AtomicList) < 0) {
+        Py_DECREF(&AtomicList);
         init_failed = true;
     }
 
-    if (PyModule_AddObject(mod, "Dict", (PyObject *) &LeafDict) < 0) {
-        Py_DECREF(&LeafDict);
+    if (PyModule_AddObject(mod, "AtomicDict", (PyObject *) &AtomicDict) < 0) {
+        Py_DECREF(&AtomicDict);
         init_failed = true;
     }
 
