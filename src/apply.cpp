@@ -543,7 +543,7 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
 
         // Pop apply's kwargs from `kwargs` so that it could be passed along to
         //  `_apply_base`.
-        PyObject* own = PyDict_SplitItemStrings(kwargs, (char**) kwlist, true);
+        PyObject* own = PyDict_SplitItemStrings(kwargs, kwlist, true);
         if (own == NULL) {
             Py_DECREF(rest);
             return NULL;
