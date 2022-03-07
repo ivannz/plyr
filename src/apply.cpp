@@ -533,7 +533,13 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
     // handle `apply(..., *, _star, _safe, _finalizer, **kwargs)`
     // XXX if the finalizer is not required, the kwarg must be omitted.
     if (kwargs) {
-        static char *kwlist[] = {"_safe", "_star", "_finalizer", "_strict", NULL};
+        static const char *kwlist[] = {
+            "_safe",
+            "_star",
+            "_finalizer",
+            "_strict",
+            NULL,
+        };
 
         // Pop apply's kwargs from `kwargs` so that it could be passed along to
         //  `_apply_base`.
@@ -555,7 +561,9 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
         // Thus we hold on to the `finalizer` in case its only ref was
         //  the `kwargs`, which we tinkered with just above.
         int parsed = PyArg_ParseTupleAndKeywords(
-            empty, own, "|$ppOp:apply", kwlist, &safe, &star, &finalizer, &strict);
+            empty, own, "|$ppOp:apply", (char**) kwlist,
+            &safe, &star, &finalizer, &strict
+        );
 
         Py_DECREF(empty);
         if (!parsed) {

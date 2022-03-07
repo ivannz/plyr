@@ -4,11 +4,13 @@
 
 PyObject* getitem(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"", "index", NULL};
+    static const char *kwlist[] = {"", "index", NULL};
 
     PyObject *object = NULL, *index = NULL;
-    int parsed = PyArg_ParseTupleAndKeywords(args, kwargs, "O|$O:getitem",
-                                             kwlist, &object, &index);
+    int parsed = PyArg_ParseTupleAndKeywords(
+        args, kwargs, "O|$O:getitem", (char**) kwlist,
+        &object, &index
+    );
     if(!parsed)
         return NULL;
 
@@ -50,11 +52,13 @@ const PyMethodDef def_xgetitem = {
 
 PyObject* setitem(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"", "", "index", NULL};
+    static const char *kwlist[] = {"", "", "index", NULL};
 
     PyObject *object = NULL, *value = NULL, *index = NULL;
     int parsed = PyArg_ParseTupleAndKeywords(
-        args, kwargs, "OO|$O:setitem", kwlist, &object, &value, &index);
+        args, kwargs, "OO|$O:setitem", (char**) kwlist,
+        &object, &value, &index
+    );
     if(!parsed)
         return NULL;
 

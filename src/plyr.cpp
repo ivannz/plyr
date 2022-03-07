@@ -132,90 +132,184 @@ static struct PyModuleDef moduledef = {
 };
 
 
-static PyMethodDef empty_methods[] = {
-    {NULL},
-};
-
-
 static PyTypeObject AtomicTuple = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "plyr.AtomicTuple",
-    .tp_doc = PyDoc_STR(
+    "plyr.AtomicTuple",             /* tp_name */
+    sizeof(PyTupleObject),          /* tp_basicsize */
+    0,                              /* tp_itemsize */
+    0,                              /* tp_dealloc */
+    0,                              /* tp_vectorcall_offset */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_as_async */
+    0,                              /* tp_repr */
+    0,                              /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    0,                              /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    0,                              /* tp_getattro */
+    0,                              /* tp_setattro */
+    0,                              /* tp_as_buffer */
+    (Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_BASETYPE),     /* tp_flags */
+    PyDoc_STR(
         "An atomic tuple, NOT considered by plyr as a nested container."
-    ),
-    .tp_basicsize = sizeof(PyTupleObject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_init = PyTuple_Type.tp_init,
-    .tp_methods = empty_methods,
+    ),                              /* tp_doc */
+    0,                              /* tp_traverse */
+    0,                              /* tp_clear */
+    0,                              /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    0,                              /* tp_iter */
+    0,                              /* tp_iternext */
+    0,                              /* tp_methods */
+    0,                              /* tp_members */
+    0,                              /* tp_getset */
+    0,  // &PyTuple_Type,           /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    0,                              /* tp_init */
+    0,                              /* tp_alloc */
+    0,                              /* tp_new */
 };
 
 
 static PyTypeObject AtomicList = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "plyr.AtomicList",
-    .tp_doc = PyDoc_STR(
+    "plyr.AtomicList",              /* tp_name */
+    sizeof(PyListObject),           /* tp_basicsize */
+    0,                              /* tp_itemsize */
+    0,                              /* tp_dealloc */
+    0,                              /* tp_vectorcall_offset */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_as_async */
+    0,                              /* tp_repr */
+    0,                              /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    0,                              /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    0,                              /* tp_getattro */
+    0,                              /* tp_setattro */
+    0,                              /* tp_as_buffer */
+    (Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_BASETYPE),     /* tp_flags */
+    PyDoc_STR(
         "An atomic list, NOT considered by plyr as a nested container."
-    ),
-    .tp_basicsize = sizeof(PyListObject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_init = PyList_Type.tp_init,
-    .tp_methods = empty_methods,
+    ),                              /* tp_doc */
+    0,                              /* tp_traverse */
+    0,                              /* tp_clear */
+    0,                              /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    0,                              /* tp_iter */
+    0,                              /* tp_iternext */
+    0,                              /* tp_methods */
+    0,                              /* tp_members */
+    0,                              /* tp_getset */
+    0,  // &PyList_Type,            /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    0,                              /* tp_init */
+    0,                              /* tp_alloc */
+    0,                              /* tp_new */
 };
 
 
 static PyTypeObject AtomicDict = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "plyr.AtomicDict",
-    .tp_doc = PyDoc_STR(
+    "plyr.AtomicDict",              /* tp_name */
+    sizeof(PyDictObject),           /* tp_basicsize */
+    0,                              /* tp_itemsize */
+    0,                              /* tp_dealloc */
+    0,                              /* tp_vectorcall_offset */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_as_async */
+    0,                              /* tp_repr */
+    0,                              /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    0,                              /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    0,                              /* tp_getattro */
+    0,                              /* tp_setattro */
+    0,                              /* tp_as_buffer */
+    (Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_BASETYPE),     /* tp_flags */
+    PyDoc_STR(
         "An atomic dict, NOT considered by plyr as a nested container."
-    ),
-    .tp_basicsize = sizeof(PyDictObject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_init = PyDict_Type.tp_init,
-    .tp_methods = empty_methods,
+    ),                              /* tp_doc */
+    0,                              /* tp_traverse */
+    0,                              /* tp_clear */
+    0,                              /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    0,                              /* tp_iter */
+    0,                              /* tp_iternext */
+    0,                              /* tp_methods */
+    0,                              /* tp_members */
+    0,                              /* tp_getset */
+    0,  // &PyDict_Type,            /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    0,                              /* tp_init */
+    0,                              /* tp_alloc */
+    0,                              /* tp_new */
 };
 
 
 PyMODINIT_FUNC
 PyInit_plyr(void)
 {
-    bool init_failed = false;
-
-    // prepare the leaf container types (excluding namedtuple)
+    // prepare the atomic leaf container types (excluding namedtuple)
+    // XXX see the note on `.tp_base` at
+    //     https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_base
     AtomicTuple.tp_base = &PyTuple_Type;
-    if (PyType_Ready(&AtomicTuple) < 0)
-        return NULL;
-
     AtomicList.tp_base = &PyList_Type;
-    if (PyType_Ready(&AtomicList) < 0)
-        return NULL;
-
     AtomicDict.tp_base = &PyDict_Type;
-    if (PyType_Ready(&AtomicDict) < 0)
+    if (
+        PyType_Ready(&AtomicTuple) < 0 ||
+        PyType_Ready(&AtomicList) < 0 ||
+        PyType_Ready(&AtomicDict) < 0
+    )
         return NULL;
 
     PyObject *mod = PyModule_Create(&moduledef);
     if (mod == NULL)
         return NULL;
 
-    /// register custom types (NB AddModule steals refs on success)
+    bool init_failed = false;
+
+    // register custom types (NB AddModule steals refs on success)
     Py_INCREF(&AtomicTuple);
-    Py_INCREF(&AtomicList);
-    Py_INCREF(&AtomicDict);
-    if (PyModule_AddObject(mod, "AtomicTuple", (PyObject *) &AtomicTuple) < 0) {
+    if (
+        PyModule_AddObject(mod, "AtomicTuple", (PyObject *) &AtomicTuple) < 0
+    ) {
         Py_DECREF(&AtomicTuple);
         init_failed = true;
     }
 
-    if (PyModule_AddObject(mod, "AtomicList", (PyObject *) &AtomicList) < 0) {
+    Py_INCREF(&AtomicList);
+    if (
+        PyModule_AddObject(mod, "AtomicList", (PyObject *) &AtomicList) < 0
+    ) {
         Py_DECREF(&AtomicList);
         init_failed = true;
     }
 
-    if (PyModule_AddObject(mod, "AtomicDict", (PyObject *) &AtomicDict) < 0) {
+    Py_INCREF(&AtomicDict);
+    if (
+        PyModule_AddObject(mod, "AtomicDict", (PyObject *) &AtomicDict) < 0
+    ) {
         Py_DECREF(&AtomicDict);
         init_failed = true;
     }

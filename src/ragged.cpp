@@ -371,7 +371,7 @@ PyObject* ragged(
         return NULL;
 
     if (kwargs) {
-        static char *kwlist[] = {"_star", "_finalizer", NULL};
+        static const char *kwlist[] = {"_star", "_finalizer", NULL};
 
         PyObject* own = PyDict_SplitItemStrings(kwargs, kwlist, true);
         if (own == NULL) {
@@ -389,7 +389,7 @@ PyObject* ragged(
         }
 
         int parsed = PyArg_ParseTupleAndKeywords(
-            empty, own, "|$pO:ragged", kwlist, &star, &finalizer);
+            empty, own, "|$pO:ragged", (char**) kwlist, &star, &finalizer);
 
         Py_DECREF(empty);
         if (!parsed) {

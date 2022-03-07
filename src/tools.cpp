@@ -34,7 +34,7 @@ PyObject *PyObject_CallWithSingleArg(
 
 PyObject *PyDict_SplitItemStrings(
     PyObject *dict,
-    char *keys[],
+    const char *keys[],
     const bool pop=false)
 {
     // Pop the specified keys in a NULL-terminated str key list `keys` from

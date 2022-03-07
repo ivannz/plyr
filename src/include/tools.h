@@ -5,7 +5,7 @@ PyObject *PyObject_CallWithSingleArg(
 
 PyObject *PyDict_SplitItemStrings(
     PyObject *dict,
-    char *keys[],
+    const char *keys[],
     const bool pop);
 
 PyObject* PyTuple_Clone(
