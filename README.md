@@ -20,22 +20,22 @@ Below we provide an example, which, we hope, illustrates the cases `plyr` might 
 import plyr
 from collections import namedtuple
 
-nt = namedtuple('nt', 'u,v')
+nt = namedtuple("nt", "u,v")
 
 # add the leaf data in a pair of nested objects
 plyr.apply(
     lambda u, v: u + v,
-    [{'a': (1, 2, 3), 'z': 3.1415}, nt([1, 'u'], 'abc')],
-    [{'a': (4, 6, 8), 'z': 2.7128}, nt([4, 'v'], 'xyz')],
+    [{"a": (1, 2, 3), "z": 3.1415}, nt([1, "u"], "abc")],
+    [{"a": (4, 6, 8), "z": 2.7128}, nt([4, "v"], "xyz")],
     # _star=True,  # (default) call fn(d1, d2, **kwargs)
 )
 # output: [{'a': (5, 8, 11), 'z': 5.8543}, nt(u=[5, 'uv'], v='abcxyz')]
 
 # join strings in a pair of tuples
 plyr.apply(
-    ' -->> '.join,
-    ('abc', 'uvw', 'xyz',),
-    ('123', '456', '789',),
+    " -->> ".join,
+    ("abc", "uvw", "xyz"),
+    ("123", "456", "789"),
     _star=False,  # call fn((d1, d2,), **kwargs)
 )
 # output: ('abc -->> 123', 'uvw -->> 456', 'xyz -->> 789')
@@ -121,7 +121,7 @@ The following snippet shows how to represent a given nested object as a flat lis
 and then undo the process.
 
 ```python
-o = [1, (2, 3), {'a': (4, 5), 'z': {'a': 6}}, 7]
+o = [1, (2, 3), {"a": (4, 5), "z": {"a": 6}}, 7]
 
 flat, skel = flatten(o)
 assert o == unflatten(flat, skel)
@@ -135,33 +135,29 @@ This example demonstrates how to unpack a stream of data into nested objects.
 ```python
 stream, _ = iter(range(13)), None
 
-struct = ({'foo': _, 'bar': [_, _]}, _)
+struct = ({"foo": _, "bar": [_, _]}, _)
 
 objects = [unflatten(stream, struct) for _ in range(3)]
 ```
 
 The following example illustrates how to compute the a functon over nested objects
-and transpose the structure:
+and *invert* the structure:
 
 ```python
 import plyr
 
 
-def unflatten(flat, struct):
+def unflatten(*flat, struct):
     return plyr.apply(lambda *a, it=iter(flat): next(it), struct)
 
 
-def foo(x):
-    return {'x': x, 'x**2': x**2}
+def func(x):
+    return {"a": x, "a*a": x * x}
 
 
-a = {"foo": 1, "bar": [2], "baz": (3, 4)}
-
-leaves = []
-struct = plyr.apply(foo, a, _committer=leaves.append)
-
-leaves = plyr.apply(plyr.AtomicTuple, *leaves, _star=False)
-plyr.apply(unflatten, leaves, struct=struct)
+o = {"foo": 1, "bar": [2], "baz": (3, 4)}
+flat, struct = plyr.flatten(func, o)
+inverted = plyr.apply(unflatten, *flat, struct=struct)
 ```
 
 ## Other Examples
