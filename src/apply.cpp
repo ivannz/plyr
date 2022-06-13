@@ -613,9 +613,9 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
             return NULL;
         }
 
-        // incref `finalizer` PRIOR to decrefing the temporary subdict `own`
+        // incref callables PRIOR to decrefing the temporary subdict `own`
         Py_XINCREF(finalizer);  // incref unless NULL
-        Py_XINCREF(committer);  // incref unless NULL
+        Py_XINCREF(committer);
         Py_DECREF(own);
     }
 
@@ -624,6 +624,7 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
         callable, main, rest, safe, star, kwargs, finalizer, strict, committer);
 
     Py_XDECREF(finalizer);
+    Py_XDECREF(committer);
     Py_DECREF(rest);
 
     return result;

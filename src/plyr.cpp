@@ -5,6 +5,7 @@
 #include <operations.h>
 
 #include <ragged.h>
+#include <tools.h>
 
 
 PyDoc_STRVAR(
@@ -69,6 +70,73 @@ static PyObject* t_ply(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 
+static PyObject* flatten(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int star = 1;
+    PyObject *callable = NULL, *main = NULL, *rest = NULL;
+    if(!parse_apply_args(args, &callable, &main, &rest))
+        return NULL;
+
+    if (kwargs) {
+        static const char *kwlist[] = {
+            "_star",
+            NULL,
+        };
+
+        PyObject* own = PyDict_SplitItemStrings(kwargs, kwlist, true);
+        if (own == NULL) {
+            Py_DECREF(rest);
+            return NULL;
+        }
+
+        PyObject *empty = PyTuple_New(0);
+        if (empty == NULL) {
+            Py_DECREF(own);
+            Py_DECREF(rest);
+            return NULL;
+        }
+
+        int parsed = PyArg_ParseTupleAndKeywords(
+            empty, own, "|$p:apply", (char**) kwlist, &star);
+
+        Py_DECREF(empty);
+        if (!parsed) {
+            Py_DECREF(own);
+            Py_DECREF(rest);
+            return NULL;
+        }
+
+        Py_DECREF(own);
+    }
+
+    // get the `.append` method of a new list to which the leaves are added
+    PyObject *list = PyList_New(0);
+    if(list == NULL) {
+        Py_DECREF(rest);
+        return NULL;
+    }
+
+    PyObject *append = PyObject_GetAttrString(list, "append");
+    if(append == NULL) {
+        Py_DECREF(list);
+        Py_DECREF(rest);
+        return NULL;
+    }
+
+    // force safe and strict flags
+    PyObject *result = _apply(callable, main, rest, 1, star, kwargs, NULL, 1, append);
+    Py_DECREF(append);
+    Py_DECREF(rest);
+
+    // value builder creates new references
+    PyObject *tuple = Py_BuildValue("(OO)", list, result);
+    Py_DECREF(result);
+    Py_DECREF(list);
+
+    return tuple;
+}
+
+
 static PyMethodDef modplyr_methods[] = {
     def_apply,
     def_validate,
@@ -99,6 +167,14 @@ static PyMethodDef modplyr_methods[] = {
         METH_VARARGS | METH_KEYWORDS,
         PyDoc_STR(
             "Strict tuple-apply with safety checks."
+        ),
+    }, {
+        "flatten",
+        (PyCFunction) flatten,
+        METH_VARARGS | METH_KEYWORDS,
+        PyDoc_STR(
+            "Apply with safety checks returning a flat list of leaf results "
+            "and the nested object's structure."
         ),
     },
     def_getitem,
