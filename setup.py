@@ -2,7 +2,7 @@ from setuptools import setup, Extension
 
 setup(
     name="python-plyr",
-    version="0.8.1",
+    version="0.8",
     description="""Mapping tools for nested containers.""",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
