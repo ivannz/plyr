@@ -70,7 +70,7 @@ static PyObject* t_ply(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 
-static PyObject* flatten(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject* flatapply(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int star = 1;
     PyObject *callable = NULL, *main = NULL, *rest = NULL;
@@ -169,11 +169,11 @@ static PyMethodDef modplyr_methods[] = {
             "Strict tuple-apply with safety checks."
         ),
     }, {
-        "flatten",
-        (PyCFunction) flatten,
+        "flatapply",
+        (PyCFunction) flatapply,
         METH_VARARGS | METH_KEYWORDS,
         PyDoc_STR(
-            "flatten(callable, *objects, _star=True, **kwargs)\n"
+            "flatapply(callable, *objects, _star=True, **kwargs)\n"
             "\n"
             "Compute the function on the nested objects' leaves and return\n"
             "a depth-first flattened list of results and the nested structure.\n"
@@ -184,12 +184,12 @@ static PyMethodDef modplyr_methods[] = {
             "    A callable to be applied to the leaf data.\n"
             "\n"
             "*objects : nested objects\n"
-            "    Like `.apply`, all remaining positionals to `.flatten` are\n"
+            "    Like `.apply`, all remaining positionals to `.flatapply` are\n"
             "    assumed to be nested objects, leaves of which supply arguments\n"
             "    for the callable.\n"
             "\n"
             "_star : bool, default=True\n"
-            "    Determines wherer to pass the leaf data to the callable as\n"
+            "    Determines whether to pass the leaf data to the callable as\n"
             "    positionals or as a tuple. See `.apply`.\n"
             "\n"
             "**kwargs : variable keyword arguments\n"
