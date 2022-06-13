@@ -228,7 +228,7 @@ static PyMethodDef modplyr_methods[] = {
 
 static struct PyModuleDef moduledef = {
         PyModuleDef_HEAD_INIT,
-        "plyr",
+        "base",
         __doc__,
         -1,
         modplyr_methods,
@@ -371,7 +371,7 @@ static PyTypeObject AtomicDict = {
 
 
 PyMODINIT_FUNC
-PyInit_plyr(void)
+PyInit_base(void)
 {
     // prepare the atomic leaf container types (excluding namedtuple)
     // XXX see the note on `.tp_base` at

@@ -2,7 +2,7 @@ from setuptools import setup, Extension
 
 setup(
     name="python-plyr",
-    version="0.8",
+    version="0.8.1",
     description="""Mapping tools for nested containers.""",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -10,11 +10,12 @@ setup(
     license="MIT License",
     author="Ivan Nazarov",
     author_email="ivannnnz@gmail.com",
-    packages=[],
-    install_requires=[],
+    packages=[
+        "plyr",
+    ],
     ext_modules=[
         Extension(
-            "plyr",
+            "plyr.base",
             [
                 "src/plyr.cpp",
                 "src/validate.cpp",
@@ -28,4 +29,6 @@ setup(
             language="c++",
         ),
     ],
+    python_requires=">=3.7",
+    install_requires=[],
 )
