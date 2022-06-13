@@ -53,6 +53,13 @@ PyDoc_STRVAR(
     "\n"
     "    OMIT the `_finalizer` kwarg if finalization is NOT REQUIRED.\n"
     "\n"
+    "_committer : callable, optional\n"
+    "    The committer object to be called on the result of `callable`, computed\n"
+    "    on the leaf python objects. The returned value of `_committer` is put\n"
+    "    into the rebuilt structure, instead of the original result.\n"
+    "\n"
+    "    OMIT the `_committer` kwarg if no postprocessing is NOT REQUIRED.\n"
+    "\n"
     "_strict : bool, default=True\n"
     "    Whether to treat the subtypes of built-in containers as non-leaf nested\n"
     "    containers and descend into them. NOTE, that when being rebuilt, subtypes\n"
@@ -126,7 +133,8 @@ PyObject* _apply(
     const bool star,
     PyObject *kwargs,
     PyObject *finalizer,
-    const bool strict);
+    const bool strict,
+    PyObject *committer);
 
 
 static PyObject* _apply_dict(
@@ -137,7 +145,8 @@ static PyObject* _apply_dict(
     const bool star,
     PyObject *kwargs,
     PyObject *finalizer,
-    const bool strict)
+    const bool strict,
+    PyObject *committer)
 {
     Py_ssize_t len = PyTuple_GET_SIZE(rest);
     PyObject *key, *main_, *item_, *rest_ = PyTuple_New(len);
@@ -172,7 +181,7 @@ static PyObject* _apply_dict(
         }
 
         // `result` is a new object, for which we are now responsible
-        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict);
+        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict, committer);
         if(result == NULL) {
             Py_DECREF(rest_);
 
@@ -207,7 +216,8 @@ static PyObject* _apply_tuple(
     const bool star,
     PyObject *kwargs,
     PyObject *finalizer,
-    const bool strict)
+    const bool strict,
+    PyObject *committer)
 {
     Py_ssize_t len = PyTuple_GET_SIZE(rest);
     PyObject *main_, *item_, *rest_ = PyTuple_New(len);
@@ -234,7 +244,7 @@ static PyObject* _apply_tuple(
             PyTuple_SET_ITEM(rest_, j, item_);
         }
 
-        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict);
+        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict, committer);
         if(result == NULL) {
             Py_DECREF(rest_);
             Py_DECREF(output);
@@ -275,7 +285,8 @@ static PyObject* _apply_list(
     const bool star,
     PyObject *kwargs,
     PyObject *finalizer,
-    const bool strict)
+    const bool strict,
+    PyObject *committer)
 {
     Py_ssize_t len = PyTuple_GET_SIZE(rest);
     PyObject *main_, *item_, *rest_ = PyTuple_New(len);
@@ -302,7 +313,7 @@ static PyObject* _apply_list(
             PyTuple_SET_ITEM(rest_, j, item_);
         }
 
-        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict);
+        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict, committer);
         if(result == NULL) {
             Py_DECREF(rest_);
             Py_DECREF(output);
@@ -330,7 +341,8 @@ static PyObject* _apply_mapping(
     const bool star,
     PyObject *kwargs,
     PyObject *finalizer,
-    const bool strict)
+    const bool strict,
+    PyObject *committer)
 {
     // XXX it's unlikely that we will ever use this branch, because as docs say
     //  it is impossible to know the type of keys of a mapping at runtime, hence
@@ -373,7 +385,7 @@ static PyObject* _apply_mapping(
 
         Py_DECREF(result);
 
-        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict);
+        result = _apply(callable, main_, rest_, safe, star, kwargs, finalizer, strict, committer);
         if(result == NULL) break;
 
         PyDict_SetItem(output, key, result);
@@ -394,7 +406,8 @@ static PyObject* _apply_base(
     PyObject *main,
     PyObject *rest,
     const bool star,
-    PyObject *kwargs)
+    PyObject *kwargs,
+    PyObject *committer)
 {
     PyObject *output;
 
@@ -420,7 +433,15 @@ static PyObject* _apply_base(
     }
     Py_DECREF(args);
 
-    return output;
+    // bypass the finalizer if _apply_* failed and bubble up the exception
+    if(committer == NULL || output == NULL)
+        return output;
+
+    // The committer is only called on the leaf data
+    PyObject *result = PyObject_CallWithSingleArg(committer, output, NULL);
+    Py_DECREF(output);
+
+    return result;
 }
 
 
@@ -432,7 +453,8 @@ PyObject* _apply(
     const bool star,
     PyObject *kwargs,
     PyObject *finalizer,
-    const bool strict)
+    const bool strict,
+    PyObject *committer)
 {
     PyObject *result;
 
@@ -442,7 +464,7 @@ PyObject* _apply(
                 return NULL;
 
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _apply_dict(callable, main, rest, safe, star, kwargs, finalizer, strict);
+        result = _apply_dict(callable, main, rest, safe, star, kwargs, finalizer, strict, committer);
         Py_LeaveRecursiveCall();
 
     } else if(
@@ -453,7 +475,7 @@ PyObject* _apply(
                 return NULL;
 
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _apply_tuple(callable, main, rest, safe, star, kwargs, finalizer, strict);
+        result = _apply_tuple(callable, main, rest, safe, star, kwargs, finalizer, strict, committer);
         Py_LeaveRecursiveCall();
 
     } else if(PyList_CheckExact(main) || (!strict && PyList_Check(main))) {
@@ -462,13 +484,13 @@ PyObject* _apply(
                 return NULL;
 
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _apply_list(callable, main, rest, safe, star, kwargs, finalizer, strict);
+        result = _apply_list(callable, main, rest, safe, star, kwargs, finalizer, strict, committer);
         Py_LeaveRecursiveCall();
 
     } else {
         // The base case, i.e. having reached the leaf objects (non containers)
         // is non recursive
-        return _apply_base(callable, main, rest, star, kwargs);
+        return _apply_base(callable, main, rest, star, kwargs, committer);
     }
 
     // bypass the finalizer if _apply_* failed and bubble up the exception
@@ -522,7 +544,8 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
     // from the URL at the top: {API 1.2.1} the call mechanism guarantees
     //  to hold a reference to every argument for the duration of the call.
     int safe = 1, star = 1, strict=1;
-    PyObject *callable = NULL, *main = NULL, *rest = NULL, *finalizer=NULL;
+    PyObject *callable = NULL, *main = NULL, *rest = NULL;
+    PyObject *finalizer=NULL, *committer=NULL;
 
     // handle `apply(fn, main, *rest, ...)`
     // XXX args remains the owner of the extracted objects, but it is guaranteed
@@ -537,6 +560,7 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
             "_safe",
             "_star",
             "_finalizer",
+            "_committer",
             "_strict",
             NULL,
         };
@@ -561,8 +585,8 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
         // Thus we hold on to the `finalizer` in case its only ref was
         //  the `kwargs`, which we tinkered with just above.
         int parsed = PyArg_ParseTupleAndKeywords(
-            empty, own, "|$ppOp:apply", (char**) kwlist,
-            &safe, &star, &finalizer, &strict
+            empty, own, "|$ppOOp:apply", (char**) kwlist,
+            &safe, &star, &finalizer, &committer, &strict
         );
 
         Py_DECREF(empty);
@@ -581,14 +605,23 @@ PyObject* apply(PyObject *self, PyObject *args, PyObject *kwargs)
             return NULL;
         }
 
+        if(committer != NULL && !PyCallable_Check(committer)) {
+            PyErr_SetString(PyExc_TypeError, "The committer must be a callable.");
+
+            Py_DECREF(own);
+            Py_DECREF(rest);
+            return NULL;
+        }
+
         // incref `finalizer` PRIOR to decrefing the temporary subdict `own`
         Py_XINCREF(finalizer);  // incref unless NULL
+        Py_XINCREF(committer);  // incref unless NULL
         Py_DECREF(own);
     }
 
     // make the call, then decref everything we might own
     PyObject *result = _apply(
-        callable, main, rest, safe, star, kwargs, finalizer, strict);
+        callable, main, rest, safe, star, kwargs, finalizer, strict, committer);
 
     Py_XDECREF(finalizer);
     Py_DECREF(rest);

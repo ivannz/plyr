@@ -140,6 +140,29 @@ struct = ({'foo': _, 'bar': [_, _]}, _)
 objects = [unflatten(stream, struct) for _ in range(3)]
 ```
 
+The following example illustrates how to compute the a functon over nested objects
+and transpose the structure:
+
+```python
+import plyr
+
+
+def unflatten(flat, struct):
+    return plyr.apply(lambda *a, it=iter(flat): next(it), struct)
+
+
+def foo(x):
+    return {'x': x, 'x**2': x**2}
+
+
+a = {"foo": 1, "bar": [2], "baz": (3, 4)}
+
+leaves = []
+struct = plyr.apply(foo, a, _committer=leaves.append)
+
+leaves = plyr.apply(plyr.AtomicTuple, *leaves, _star=False)
+plyr.apply(unflatten, leaves, struct=struct)
+```
 
 ## Other Examples
 

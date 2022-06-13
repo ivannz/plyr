@@ -23,7 +23,7 @@ static PyObject* suply(PyObject *self, PyObject *args, PyObject *kwargs)
     if(!parse_apply_args(args, &callable, &main, &rest))
         return NULL;
 
-    PyObject *result = _apply(callable, main, rest, 0, 1, kwargs, NULL, 1);
+    PyObject *result = _apply(callable, main, rest, 0, 1, kwargs, NULL, 1, NULL);
     Py_DECREF(rest);
 
     return result;
@@ -36,7 +36,7 @@ static PyObject* tuply(PyObject *self, PyObject *args, PyObject *kwargs)
     if(!parse_apply_args(args, &callable, &main, &rest))
         return NULL;
 
-    PyObject *result = _apply(callable, main, rest, 0, 0, kwargs, NULL, 1);
+    PyObject *result = _apply(callable, main, rest, 0, 0, kwargs, NULL, 1, NULL);
     Py_DECREF(rest);
 
     return result;
@@ -49,7 +49,7 @@ static PyObject* s_ply(PyObject *self, PyObject *args, PyObject *kwargs)
     if(!parse_apply_args(args, &callable, &main, &rest))
         return NULL;
 
-    PyObject *result = _apply(callable, main, rest, 1, 1, kwargs, NULL, 1);
+    PyObject *result = _apply(callable, main, rest, 1, 1, kwargs, NULL, 1, NULL);
     Py_DECREF(rest);
 
     return result;
@@ -62,7 +62,7 @@ static PyObject* t_ply(PyObject *self, PyObject *args, PyObject *kwargs)
     if(!parse_apply_args(args, &callable, &main, &rest))
         return NULL;
 
-    PyObject *result = _apply(callable, main, rest, 1, 0, kwargs, NULL, 1);
+    PyObject *result = _apply(callable, main, rest, 1, 0, kwargs, NULL, 1, NULL);
     Py_DECREF(rest);
 
     return result;
