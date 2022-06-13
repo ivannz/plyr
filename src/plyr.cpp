@@ -173,8 +173,33 @@ static PyMethodDef modplyr_methods[] = {
         (PyCFunction) flatten,
         METH_VARARGS | METH_KEYWORDS,
         PyDoc_STR(
-            "Apply with safety checks returning a flat list of leaf results "
-            "and the nested object's structure."
+            "Compute the function on the nested objects' leaves and return \n"
+            "a depth-first flattened list of results and the nested structure.\n"
+            "\n"
+            "Parameters\n"
+            "----------\n"
+            "callable : callable\n"
+            "    A callable to be applied to the leaf data.\n"
+            "\n"
+            "*objects : nested objects\n"
+            "    Like `.apply`, all remaining positionals to `.flatten` are\n"
+            "    assumed to be nested objects, leaves of which supply arguments\n"
+            "    for the callable.\n"
+            "\n"
+            "_star : bool, default=True\n"
+            "    Determines wherer to pass the leaf data to the callable as\n"
+            "    positionals or as a tuple. See `.apply`.\n"
+            "\n"
+            "**kwargs : variable keyword arguments\n"
+            "   Optional keyword arguments passed AS IS to the `callable`.\n"
+            "\n"
+            "Returns\n"
+            "-------\n"
+            "flat : list\n"
+            "    The list with the results in depth-first order.\n"
+            "\n"
+            "struct : nested object\n"
+            "    The skeletal structure of the nested object.\n"
         ),
     },
     def_getitem,
