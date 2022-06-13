@@ -130,7 +130,7 @@ static PyObject* flatapply(PyObject *self, PyObject *args, PyObject *kwargs)
 
     // value builder creates new references
     PyObject *tuple = Py_BuildValue("(OO)", list, result);
-    Py_DECREF(result);
+    Py_XDECREF(result);
     Py_DECREF(list);
 
     return tuple;
