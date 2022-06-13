@@ -173,7 +173,9 @@ static PyMethodDef modplyr_methods[] = {
         (PyCFunction) flatten,
         METH_VARARGS | METH_KEYWORDS,
         PyDoc_STR(
-            "Compute the function on the nested objects' leaves and return \n"
+            "flatten(callable, *objects, _star=True, **kwargs)\n"
+            "\n"
+            "Compute the function on the nested objects' leaves and return\n"
             "a depth-first flattened list of results and the nested structure.\n"
             "\n"
             "Parameters\n"

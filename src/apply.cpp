@@ -11,7 +11,8 @@
 PyDoc_STRVAR(
     __doc__,
     "\n"
-    "apply(callable, *objects, _safe=True, _star=True, _finalizer=None, _strict=True, **kwargs)\n"
+    "apply(callable, *objects, _safe=True, _star=True, _finalizer=None,"
+          " _committer=None, _strict=True, **kwargs)\n"
     "\n"
     "Compute the function using the leaf data of the nested objects as arguments.\n"
     "\n"
