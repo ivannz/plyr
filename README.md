@@ -77,6 +77,8 @@ flat
 This next example demonstrates how to unpack a stream of data into nested objects.
 
 ```python
+import plyr
+
 stream, _ = iter(range(13)), None
 
 struct = ({"foo": _, "bar": [_, _]}, _)
@@ -101,6 +103,20 @@ inverted = plyr.apply(plyr.unflatten, *flat, _star=False, struct=struct)
 
 inverted
 # output: ({'z': (8, {'a': 3})}, (-4, {'a': -3}))
+```
+
+Here's how one might broadcast a value across the structure of a specified nested object.
+
+```python
+import plyr
+
+struct = {"foo": {"bar": 1}, "baz": (2, 3)}
+
+const = "abc"
+broadcast = plyr.apply(lambda x: const, struct)
+
+broadcast
+# output: {'foo': {'bar': 'abc'}, 'baz': ('abc', 'abc')}
 ```
 
 ## Other Examples
