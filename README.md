@@ -1,4 +1,4 @@
-# Plyr: computing on nested containers 
+# Plyr: computing on nested containers
 
 `plyr` \[/plaɪ'ə/\], derived from `applier`, is a python C-extension, that implements a `map`-like logic, which computes a specified function on the lower-most non-container data of arbitrarily nested *built-in* python containers, i.e. dicts, lists, tuples. It automatically unpacks nested containers in order to call the same function on their underlying non-container objects and then reassembles the structures. See the docstring of `plyr.apply` for details.
 
@@ -56,7 +56,6 @@ plyr.apply(
 By default `.apply` performs safety checks to ensure identical structure if multiple nested objects are given. If the arguments have identical structure by design, then these integrity checks may be turned off by specifying `_safe=False`. Please refer to the docs of `plyr.apply`.
 
 `plyr.ragged` is a special version of `.apply` which implements leaf broadcasting semantics. When processing multiple nested objects it allows one structure to subsume the other structures: any intermediate leaf data **is broadcasted deeper into the hierarchy** of the other nested structures. Please refer to `./doc/mapping_structures.ipynb` for details.
-
 
 ## Serializing and deserializing
 
@@ -150,4 +149,4 @@ shapes = plyr.apply(lambda x: x.shape, res)
 plyr.apply(np.std, res, axis=0)
 ```
 
-You may notice that `.apply` is very _unsophisticated_: it applies the specified function to the leaf data regardless of its type, and every dict, list, or tuple is _always_ treated as a nested container.
+You may notice that `.apply` is very *unsophisticated*: it applies the specified function to the leaf data regardless of its type, and every dict, list, or tuple is *always* treated as a nested container.
