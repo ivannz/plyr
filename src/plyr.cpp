@@ -5,6 +5,7 @@
 #include <operations.h>
 
 #include <ragged.h>
+#include <populate.h>
 #include <tools.h>
 
 
@@ -219,6 +220,7 @@ static PyMethodDef modplyr_methods[] = {
     def_dict_clone,
 
     def_ragged,
+    def_populate,
     {
         NULL,
         NULL,
