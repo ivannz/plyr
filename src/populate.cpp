@@ -12,6 +12,7 @@ PyDoc_STRVAR(
 PyObject* _populate(
     PyObject *iter,
     PyObject *main,
+    PyObject *filler,
     const bool strict,
     PyObject *committer);
 
@@ -19,6 +20,7 @@ PyObject* _populate(
 static PyObject* _populate_dict(
     PyObject *iter,
     PyObject *main,
+    PyObject *filler,
     const bool strict,
     PyObject *committer)
 {
@@ -30,7 +32,7 @@ static PyObject* _populate_dict(
 
     Py_ssize_t pos = 0;
     while (PyDict_Next(main, &pos, &key, &main_)) {
-        result = _populate(iter, main_, strict, committer);
+        result = _populate(iter, main_, filler, strict, committer);
         if(result == NULL) {
             Py_DECREF(output);
             return NULL;
@@ -48,6 +50,7 @@ static PyObject* _populate_dict(
 static PyObject* _populate_tuple(
     PyObject *iter,
     PyObject *main,
+    PyObject *filler,
     const bool strict,
     PyObject *committer)
 {
@@ -60,7 +63,7 @@ static PyObject* _populate_tuple(
 
     for(Py_ssize_t pos = 0; pos < numel; pos++) {
         main_ = PyTuple_GET_ITEM(main, pos);
-        result = _populate(iter, main_, strict, committer);
+        result = _populate(iter, main_, filler, strict, committer);
         if(result == NULL) {
             Py_DECREF(output);
             return NULL;
@@ -90,6 +93,7 @@ static PyObject* _populate_tuple(
 static PyObject* _populate_list(
     PyObject *iter,
     PyObject *main,
+    PyObject *filler,
     const bool strict,
     PyObject *committer)
 {
@@ -102,7 +106,7 @@ static PyObject* _populate_list(
 
     for(Py_ssize_t pos = 0; pos < numel; pos++) {
         main_ = PyList_GET_ITEM(main, pos);
-        result = _populate(iter, main_, strict, committer);
+        result = _populate(iter, main_, filler, strict, committer);
         if(result == NULL) {
             Py_DECREF(output);
             return NULL;
@@ -117,11 +121,22 @@ static PyObject* _populate_list(
 
 static PyObject* _populate_base(
     PyObject *iter,
+    PyObject *filler,
     PyObject *committer)
 {
+    // If there are no remaining values, _next returns NULL with no exception set,
     PyObject *output = PyIter_Next(iter);
-    if(output == NULL)
-        PyErr_SetNone(PyExc_StopIteration);
+    if(output == NULL && !PyErr_Occurred()) {
+        if(filler == NULL) {
+            // indicate that we've been exhausted with the StopIteration
+            PyErr_SetNone(PyExc_StopIteration);
+
+        } else {
+            // continue populating with the provided filler value
+            output = filler;
+            Py_INCREF(output);
+        }
+    }
 
     // bypass the finalizer if _populate_* failed and bubble up the exception
     if(committer == NULL || output == NULL)
@@ -138,6 +153,7 @@ static PyObject* _populate_base(
 PyObject* _populate(
     PyObject *iter,
     PyObject *main,
+    PyObject *filler,
     const bool strict,
     PyObject *committer)
 {
@@ -145,23 +161,23 @@ PyObject* _populate(
 
     if(PyDict_CheckExact(main) || (!strict && PyDict_Check(main))) {
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _populate_dict(iter, main, strict, committer);
+        result = _populate_dict(iter, main, filler, strict, committer);
         Py_LeaveRecursiveCall();
 
     } else if(
         PyTupleNamedTuple_CheckExact(main) || (!strict && PyTuple_Check(main))
     ) {
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _populate_tuple(iter, main, strict, committer);
+        result = _populate_tuple(iter, main, filler, strict, committer);
         Py_LeaveRecursiveCall();
 
     } else if(PyList_CheckExact(main) || (!strict && PyList_Check(main))) {
         if(Py_EnterRecursiveCall("")) return NULL;
-        result = _populate_list(iter, main, strict, committer);
+        result = _populate_list(iter, main, filler, strict, committer);
         Py_LeaveRecursiveCall();
 
     } else {
-        return _populate_base(iter, committer);
+        return _populate_base(iter, filler, committer);
     }
 
     return result;
@@ -171,14 +187,14 @@ PyObject* _populate(
 PyObject* populate(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 
-    PyObject *iter = NULL, *main = NULL, *committer=NULL;
+    PyObject *iter = NULL, *main = NULL, *committer=NULL, *filler=NULL;
     int strict=1;
 
-    static const char *kwlist[] = {"", "", "_committer", "_strict", NULL};
+    static const char *kwlist[] = {"", "", "default", "_committer", "_strict", NULL};
     if(!PyArg_ParseTupleAndKeywords(
         args, kwargs,
-        "OO|$Op:populate", (char**) kwlist,
-        &main, &iter, &committer, &strict
+        "OO|$OOp:populate", (char**) kwlist,
+        &main, &iter, &filler, &committer, &strict
     ))
         return NULL;
 
@@ -192,7 +208,7 @@ PyObject* populate(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    return _populate(iter, main, strict, committer);
+    return _populate(iter, main, filler, strict, committer);
 }
 
 
