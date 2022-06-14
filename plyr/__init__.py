@@ -65,9 +65,9 @@ def unflatten(flat, struct, *, raises=True):
     """
     # use `next(it, None)` to fill missing leaves with `None`-s.
     if not raises:
-        return apply(lambda *a, it=iter(flat): next(it, None), struct)
+        return populate(struct, iter(flat), default=None)
 
-    return apply(lambda *a, it=iter(flat): next(it), struct)
+    return populate(struct, iter(flat))
 
 
 def iapply(f, *objects, _star=True, **kwargs):
