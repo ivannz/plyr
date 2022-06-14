@@ -2,7 +2,7 @@ from setuptools import setup, Extension
 
 setup(
     name="python-plyr",
-    version="0.8",
+    version="0.8.1",
     description="""Mapping tools for nested containers.""",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -23,6 +23,7 @@ setup(
                 "src/apply.cpp",
                 "src/tools.cpp",
                 "src/ragged.cpp",
+                "src/populate.cpp",
             ],
             include_dirs=["src/include"],
             extra_compile_args=["-O3", "-Ofast", "--std=c++11"],

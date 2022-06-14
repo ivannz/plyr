@@ -14,6 +14,7 @@ from .base import (
     xgetitem,
     xsetitem,
     identity,
+    populate,
     AtomicTuple,
     AtomicList,
     AtomicDict,
