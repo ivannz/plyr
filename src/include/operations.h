@@ -19,3 +19,5 @@ extern const PyMethodDef def_is_mapping;
 
 extern const PyMethodDef def_dict_getrefs;
 extern const PyMethodDef def_dict_clone;
+
+extern const PyMethodDef def_identity;

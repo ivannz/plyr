@@ -13,6 +13,7 @@ from .base import (
     setitem,
     xgetitem,
     xsetitem,
+    identity,
     AtomicTuple,
     AtomicList,
     AtomicDict,
@@ -35,7 +36,7 @@ def flatten(struct):
     struct : nested object
         The skeletal structure of the nested object with arbitrary leaf data.
     """
-    return flatapply(lambda x: x, struct)
+    return flatapply(identity, struct)
 
 
 def unflatten(flat, struct, *, raises=True):

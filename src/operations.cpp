@@ -230,3 +230,22 @@ const PyMethodDef def_dict_clone = {
     METH_O,
     NULL,
 };
+
+
+PyObject* identity(PyObject *self, PyObject *object)
+{
+    // the act of returning a value is in itself a transfer
+    //  of ownership so we incref the object
+    Py_INCREF(object);
+    return object;
+}
+
+
+const PyMethodDef def_identity = {
+    "identity",
+    (PyCFunction) identity,
+    METH_O,
+    PyDoc_STR(
+        "identity is equivalent to `lambda x: x`"
+    ),
+};
