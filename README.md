@@ -4,6 +4,25 @@
 
 `plyr` happens to coincide with a similarly named library for [`R` statistical computations language](https://www.r-project.org/), which streamlines dataframe and vector/matrix transformations.
 
+## Setup
+
+The package can be installed from `pip`:
+
+```bash
+pip install python-plyr
+```
+
+The development environment could be initialized with the following commands:
+
+```bash
+# create a dedicated env
+conda create -n plyr "python>=3.7" pip pytest twine \
+  && conda activate plyr \
+  && pip install build
+
+# build and install
+pip install -e . -vv
+```
 
 ## the Essential Example
 
