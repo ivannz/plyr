@@ -1,4 +1,5 @@
 """Streamlined operations on built-in nested containers."""
+from .__version__ import __version__
 
 from .base import (
     apply,
