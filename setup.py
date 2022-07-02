@@ -4,8 +4,8 @@ from setuptools import setup, Extension
 # update the version number
 version = open("VERSION", "r").read().strip()
 
-# graft a dunder-version file into the root of the pacakge
-# XXX dunder-init import dunder-version
+# graft a dunder-version file into the root of the package
+# XXX dunder-init imports dunder-version
 cwd = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(cwd, "plyr", "__version__.py"), "w") as f:
     f.write(f"__version__ = '{version}'\n")
